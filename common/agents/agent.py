@@ -1,5 +1,5 @@
 import random
-from .base_agent import BaseAgent
+from common.base_agent import BaseAgent
 from common.move import Move
 from server.game import Game
 
