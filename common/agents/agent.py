@@ -2,13 +2,11 @@ import random
 from common.base_agent import BaseAgent
 from common.move import Move
 from server.game import Game
+import math
 
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
 class Agent(BaseAgent):
-
-   
-   
     def get_move(self):
         """
         Called regularly called to get the next move for your train. Implement
@@ -19,6 +17,8 @@ class Agent(BaseAgent):
         This method must return one of moves.MOVE
         """
         print(self.all_trains)
+        print(self.passengers)
+        print(self.delivery_zone)
 
         (x,y)=self.all_trains[self.nickname]['position']
         (nx,ny)=self.all_trains[self.nickname]['direction']
@@ -107,3 +107,35 @@ class Agent(BaseAgent):
             return False
         else:
             return True
+    def find_best_Path(self):
+        (OP_x,OP_y)=self.all_trains[self.nickname]['position']
+        dict_pos={}
+        dict_pos[0]=[(x,y)]
+        dict_pos["inf"] = []
+        dict_pos["B"]=[]
+        dict_pos["-"]=[]
+        for i in range(self.game_width):
+            for j in range(self.game_height):
+                if (i,j) in self.passengers:
+                    dict_pos["B"].append((i,j))
+                for name in self.all_trains:
+                    if (i,j) in self.all_trains[name]['position'] or self.all_trains[name]['carts']:
+                        dict_pos["-"].append((i,j))
+                else:
+                    dict_pos["inf"].append((i,j))
+        positions=((0,1),(0,-1),(1,0),(-1,0))
+        points=[(OP_x,OP_y)]
+        counter=0
+        E=0
+        while E!=1: #filling the grid
+            for pt in dict_pos[counter]:
+                for h in positions:
+                    index_x,index_y=pt
+                    nx,ny=h
+                    if self.game_height==(index_y+ny) or self.game_width<(index_x+nx) or (index_y+ny)<0 or (index_x+nx)<0:
+                        continue
+                    
+
+
+                    
+    
