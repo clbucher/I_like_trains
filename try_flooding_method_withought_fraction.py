@@ -1,5 +1,5 @@
 import math
-with open("I_like_trains-1.1.0/playboard.txt") as f:
+with open("playboard.txt") as f:
     L=[list(line.strip()) for line in f]
 
 wall='-'
@@ -34,7 +34,7 @@ while E!=1: #filling the grid
         for h in positions:
             index_x,index_y=pt
             nx,ny=h
-            old_value=distanz[index_y][index_x]
+            old_value=counter
             if len(distanz)==(index_y+ny) or len(distanz[0])<(index_x+nx) or (index_y+ny)<0 or (index_x+nx)<0:
                 continue
             if distanz[index_y+ny][index_x+nx]==math.inf or distanz[index_y+ny][index_x+nx]=='B':
@@ -48,6 +48,8 @@ while E!=1: #filling the grid
                 points.append((index_x+nx,index_y+ny)) #we add the new distance values
             if L[index_y+ny][index_x+nx]=='B':
                 E=1
+                B=distanz[index_y+ny][index_x+nx]
+                path_index=(index_x+nx,index_y+ny)
                 print('you have arrived at B')
                 break
         for x in distanz:
@@ -59,6 +61,31 @@ while E!=1: #filling the grid
         break
     counter+=1
 
-# finding a trace back up the grid to the starting point
-E=0
-#while E!=0:
+print('continued')
+E=0 # finding a trace back up the grid to the starting point
+path=[]
+print(B)
+counter=B
+while E!=1:
+    counter-=1
+    for pt in positions:
+        pt_x,pt_y=path_index
+        nx,ny=pt
+        searching_pt=(pt_x+nx,pt_y+ny)
+        print(searching_pt)
+        if searching_pt in updated_pt[(counter)]:
+            path.append(searching_pt)
+            path_index=searching_pt
+            print(path)
+            distanz[pt_y+ny][pt_x+nx]='H'
+            for x in distanz:
+                print(x)
+            break
+        if counter==0:
+            E=1
+            break
+print(OP_x,OP_y)
+
+
+        
+
