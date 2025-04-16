@@ -125,15 +125,74 @@ class Agent(BaseAgent):
                     dict_pos["inf"].append((i,j))
         positions=((0,1),(0,-1),(1,0),(-1,0))
         points=[(OP_x,OP_y)]
-        counter=0
-        E=0
-        while E!=1: #filling the grid
+        counter=-1
+        while dict_pos["B"]: #filling the grid
+            counter+=1
+            dict_pos[counter+1]=[]
             for pt in dict_pos[counter]:
                 for h in positions:
+                    old_value=counter
                     index_x,index_y=pt
                     nx,ny=h
                     if self.game_height==(index_y+ny) or self.game_width<(index_x+nx) or (index_y+ny)<0 or (index_x+nx)<0:
                         continue
+                    if (index_x+nx, index_y+ny) in dict_pos["inf"] or (index_x+nx, index_y+ny) in dict_pos["B"]:
+                        new_value=(old_value+1)
+                        dict_pos[new_value].append((index_x+nx, index_y+ny))
+                        #update all the values to be on the newest stand
+                        if (index_x+nx, index_y+ny) in dict_pos["inf"]:
+                            dict_pos["inf"].remove((index_x+nx, index_y+ny))
+                        else:
+                            dict_pos["B"].remove((index_x+nx, index_y+ny))
+                            B=new_value
+                            path_index=(index_x+nx,index_y+ny)
+                            print('you have arrived at B')
+                            break
+        
+        E=0 # finding a trace back up the grid to the starting point
+        path=[]
+        print(B)
+        counter=B
+        dict_pos["H"]=[]
+        while E!=1:
+            counter-=1
+            for pt in positions:
+                pt_x,pt_y=path_index
+                nx,ny=pt
+                searching_pt=(pt_x+nx,pt_y+ny)
+                print(searching_pt)
+                if searching_pt in dict_pos[(counter)]:
+                    path.append(searching_pt)
+                    path_index=searching_pt
+                    print(path)
+                    dict_pos["H"].append(pt_y+ny, pt_x+nx)
+                    dict_pos[counter].remove(pt_x+nx, pt_y+ny)
+                    break
+                if counter==0:
+                    E=1
+                    break
+        (x,y)=self.all_trains[self.nickname]["position"]
+        (x1, y1) = path[0]
+        match self.all_trains[self.nickname]["direction"]:
+            case (1,0):
+                return('RIGHT')
+            case(0,-1):
+                return('RIGHT')
+            case(-1,0):
+                return('LEFT')
+            case(0,1):
+                return('LEFT')
+        #Hie müesse mer no mache ds es öppis returnt wo när macht ds dr Zug sich bewegt. Mi Vorschlag wär ds 
+        #die Funktion vor Funktion get_move ufgrüeft wird und so öppis wie "RIGHT" usegit. Und när chönnte mer mache,
+        #ds d funktion is wall ou so öppis usegit und när chönnt mä luege ob dr Nächsti Move id Wand würd gah oder nid
+        
+                
+            
+
+
+
+                
+                    
                     
 
 
