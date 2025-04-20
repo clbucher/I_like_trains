@@ -5,6 +5,14 @@ from common.move import Move
 from server.game import Game
 import math
 
+#next optimasitaions
+#TODO(Elina) debug the case where there are two trains (they will crash into the wall or into each other, don't know why)
+#drop off optimisation
+#last resort if next move would be wall or other train, then turn
+#improve weight of distance to drop-off zone in comparison to passengers
+#comment all of the code
+
+
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
 class Agent(BaseAgent,Game):
@@ -18,7 +26,6 @@ class Agent(BaseAgent,Game):
         This method must return one of moves.MOVE
         """
         #will change game width into a coordinate system which is divided by cell size
-        #TODO(Elina) debug the case where there are two trains (they will crash into the wall or into each other, don't know why)
         self.convert_gamewith() 
         self.train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
 
@@ -182,6 +189,7 @@ class Agent(BaseAgent,Game):
         else:
             return True
         
+
     def find_best_Path_coordonates(self,your_coordinate,find_coordinate):
         """We find a list of the coordonates of the best path to the passenger"""
         find_coordinate=tuple(find_coordinate)
