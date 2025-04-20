@@ -1,3 +1,4 @@
+#version 2.1
 import random
 from common.base_agent import BaseAgent
 from common.move import Move
@@ -6,7 +7,7 @@ import math
 
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
-class Agent(BaseAgent):
+class Agent(BaseAgent,Game):
     def get_move(self):
         """
         Called regularly called to get the next move for your train. Implement
@@ -18,18 +19,22 @@ class Agent(BaseAgent):
         """
         #will change game width into a coordinate system which is divided by cell size
         self.convert_gamewith() 
-        passenger_coord=self.convert_grid(self.passengers[0]['position'])
-        Dicth_onary,path_length=self.find_best_Path_coordonates(passenger_coord)
+        print(self.all_trains)
         
-        match self.find_best_Path_directions(Dicth_onary):
-            case 'DOWN':
-                return Move.DOWN
-            case 'LEFT':
-                return Move.LEFT
-            case 'RIGHT':
-                return Move.RIGHT
-            case 'UP':
-                return Move.UP
+        if len(self.all_trains[self.nickname]['wagons'])<4:
+            passenger_coord=self.convert_grid(self.passengers[0]['position'])
+            Dicth_onary,path_length=self.find_best_Path_coordonates(passenger_coord)
+            next_move=self.find_best_Path_directions(Dicth_onary)
+            return next_move       
+        
+        else:
+            dropoff_coord=self.convert_grid(self.delivery_zone['position'])
+            drop_path,pathlength=self.find_best_Path_coordonates(dropoff_coord)
+            next_move=self.find_best_Path_directions(drop_path)
+            return next_move
+        
+
+        
         '''
         (x,y)=self.convert_grid(self.all_trains[self.nickname]['position'])
         (nx,ny)=self.all_trains[self.nickname]['direction']
@@ -66,8 +71,12 @@ class Agent(BaseAgent):
         for passenger_cord in self.convert_grid(self.passengers['positon']):
             passenger_info[self.passengers['value']]=(self.find_best_Path_coordonates(self,passenger_cord))
         return passenger_info
-    
-    #def drop_passengers_off(self):
+    '''
+    def drop_passengers_off(self):
+        x=self.convert_grid(self.delivery_zone['position'])
+        local_next_move=self.find_best_Path_coordonates(x)
+        return local_next_move
+    '''
 
 
     def wall(self,x,y,nx,ny):
@@ -162,11 +171,12 @@ class Agent(BaseAgent):
                 coordinate=tuple((i,j))
                 if coordinate == find_coordinate: #find the spesific input of our function
                     dict_pos["B"].append(coordinate)
-                for name in self.all_trains:
-                    if coordinate in self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']) or coordinate == backpositon:
+                for name in self.all_trains.keys():
+                    if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']) or coordinate == backpositon:
                         dict_pos["-"].append(coordinate)                      
                     else:
-                        dict_pos["inf"].append((i,j))              
+                        dict_pos["inf"].append((i,j)) 
+        print(self.nickname, dict_pos["-"])             
         positions=((0,1),(0,-1),(1,0),(-1,0))
         counter=-1
         E=0
@@ -225,13 +235,10 @@ class Agent(BaseAgent):
         Ny=(y1-y)
         match (Nx,Ny):
             case (1,0):
-                return('RIGHT')
+                return Move.RIGHT
             case(-1,0):
-                return('LEFT')
+                return Move.LEFT
             case(0,-1):
-                return('UP')
+                return Move.UP
             case(0,1):
-                return('DOWN')
-
-        
-        
+                return Move.DOWN
