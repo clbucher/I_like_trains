@@ -28,11 +28,21 @@ class Agent(BaseAgent,Game):
         #will change game width into a coordinate system which is divided by cell size
         self.convert_gamewith() 
         self.train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
-
+        x,y = self.train_coordinate
+        dx,dy = self.all_trains[self.nickname]["direction"]
+        print(self.all_trains[self.nickname])
         position_collect=self.what_to_collect()
         print(f'positon: {position_collect}')
         Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(self.train_coordinate, position_collect)
         next_move=self.find_best_Path_directions(Dicth_onary)
+        '''if self.wall(x,y,dx,dy):
+            if next_move in self.next_move:
+                self.next_move=next_move
+                if self.is_not_a_wall(x,y):
+                return next_move
+            else:
+                return(self.next_move[0])'''
+
         return next_move  
 
         '''
@@ -67,7 +77,6 @@ class Agent(BaseAgent,Game):
         """gives us a dictionary with the fraction distance/value so that we can compare 
         the different passengers with each other"""
         previous_distance=math.inf
-        print('step1')
         for number in range(len(self.passengers)):
             value=self.passengers[number]['value']
             position_passenger=self.convert_grid(self.passengers[number]['position'])
@@ -77,13 +86,14 @@ class Agent(BaseAgent,Game):
             if distance_passenger<previous_distance:
                 previous_distance=distance_passenger
                 solution=position_passenger
-        print('step2')
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
         #drop_off_zone_pt2=drop_off_zone_pt1
         distance_drop_off=(abs((drop_off_x-Ox))+abs((drop_off_y-Oy)))
         nb_wagons=len(self.all_trains[self.nickname]['wagons'])
         if nb_wagons==0:
             distance_wagon=math.inf
+        """elif (drop_off_x,drop_off_y) in self.all_trains[self.nickname]["wagons"]:
+            distance_wagon = math.inf""" #ds wär damit är nid i sich säuber dri fahrt bri drop off zone. aber mä müesst di zwöiti Koordinate ou no chegge
         else:
             distance_wagon=(distance_drop_off/(nb_wagons+0.0000001))
 
@@ -124,28 +134,22 @@ class Agent(BaseAgent,Game):
         turn_before_wall=self.miss_the_wall(x,y,nx,ny)
         match turn_before_wall: #will dictate the next move if there is a chance to collide with it
             case 'DOWN':
-                self.next_move= Move.DOWN
+                self.next_move= [Move.DOWN]
                 return True
             case 'UP':
-                self.next_move= Move.UP
+                self.next_move= [Move.UP]
                 return True
             case 'DOWN OR UP':
-                CHOISE=(Move.UP, Move.DOWN)
-                self.next_move=random.choice(CHOISE) #random choise of the change of direction
-                while not self.is_not_a_wall(x,y): #this will chose the next move until the chosen movement will not make us collide with the wall
-                    self.next_move=random.choice(CHOISE)
+                self.next_move=[Move.UP, Move.DOWN]
                 return True
             case 'RIGHT':
-                self.next_move= Move.RIGHT
+                self.next_move= [Move.RIGHT]
                 return True
             case 'LEFT':
-                self.next_move= Move.LEFT
+                self.next_move= [Move.LEFT]
                 return True
             case 'RIGHT OR LEFT':
-                CHOISE=(Move.LEFT,Move.RIGHT)
-                self.next_move=random.choice(CHOISE) #random choise of the change of direction
-                while not self.is_not_a_wall(x,y):#this will chose the next move until the chosen movement will not make us collide with the wall
-                    self.next_move=random.choice(CHOISE)
+                self.next_move=[Move.LEFT,Move.RIGHT]
                 return True
         return False
    
@@ -208,7 +212,9 @@ class Agent(BaseAgent,Game):
                 if coordinate == find_coordinate: #find the spesific input of our function
                     dict_pos["B"].append(coordinate)
                 for name in self.all_trains.keys():
-                    if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']) or coordinate == backpositon:
+                    #if self.all_trains[name]['position'] == [-1,-1]:
+                    #    continue wiu i ha gseh ds wenn ä Zug tot isch het är d Koordinate [-1,-1] ha eifach wöue sicher si ds es nid ds isch
+                    elif coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']) or coordinate == backpositon:
                         dict_pos["-"].append(coordinate)                      
                     else:
                         dict_pos["inf"].append((i,j))             

@@ -18,20 +18,27 @@ class Agent(BaseAgent,Game):
         """
         #will change game width into a coordinate system which is divided by cell size
         self.convert_gamewith() 
-        print(self.all_trains)
+        
+        self.train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
+        x,y = self.all_trains[self.nickname]["position"]
+        dx,dy = self.all_trains[self.nickname]["direction"]
         
         if len(self.all_trains[self.nickname]['wagons'])<4:
             passenger_coord=self.convert_grid(self.passengers[0]['position'])
             Dicth_onary,path_length=self.find_best_Path_coordonates(passenger_coord)
-            next_move=self.find_best_Path_directions(Dicth_onary)
-            return next_move       
+            next_move=self.find_best_Path_directions(Dicth_onary)     
         
         else:
             dropoff_coord=self.convert_grid(self.delivery_zone['position'])
             drop_path,pathlength=self.find_best_Path_coordonates(dropoff_coord)
             next_move=self.find_best_Path_directions(drop_path)
-            return next_move
             
+            
+        """if self.wall(x,y,dx,dy):
+            #If the next move doesn't drive us into the wall then we can effectuate it and else we have to make the one that safes us from going into the wall
+            return(self.next_move)"""
+
+        return next_move  
 
         
         '''
@@ -126,7 +133,7 @@ class Agent(BaseAgent,Game):
                     return 'UP'
                 case _:
                     return 'DOWN OR UP'
-        elif (y+ny)==self.HEIGHT or (y+ny)<0: #the train is on the top or bottom of the playboard
+        elif (y +ny) == self.HEIGHT or (y+ny)<0: #the train is on the top or bottom of the playboard
             match x:
                 case 0: #the train is next to the left boarder
                     return 'RIGHT'
@@ -171,6 +178,8 @@ class Agent(BaseAgent,Game):
                 if coordinate == find_coordinate: #find the spesific input of our function
                     dict_pos["B"].append(coordinate)
                 for name in self.all_trains.keys():
+                    #if self.all_trains[name]["position"] == [-1,-1]:
+                    #    continue
                     if coordinate in self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']) or coordinate == backpositon:
                         dict_pos["-"].append(coordinate)                      
                     else:
