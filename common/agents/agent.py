@@ -11,6 +11,7 @@ import math
 #last resort if next move would be wall or other train, then turn
 #improve weight of distance to drop-off zone in comparison to passengers
 #comment all of the code
+#prevent head on collison (similar function to is_occupied)
 
 
 # Student scipers, will be automatically used to evaluate your code
@@ -77,31 +78,81 @@ class Agent(BaseAgent,Game):
         """gives us a dictionary with the fraction distance/value so that we can compare 
         the different passengers with each other"""
         previous_distance=math.inf
+
+        #which is the best passenger to pick
+        
         for number in range(len(self.passengers)):
             value=self.passengers[number]['value']
             position_passenger=self.convert_grid(self.passengers[number]['position'])
             (x,y)=position_passenger
             (Ox,Oy)=self.train_coordinate
-            distance_passenger=((abs((x-Ox)))+(abs((y-Oy)))/value)
+            #we have chosen this estimator as the complexity is O(n) for the number of positons apart
+            distance_passenger=((abs((x-Ox)))+(abs((y-Oy)))/value) 
+            #TODO value wird i dere gliichig z fest gwichtet
+            #distance_passenger=((abs((x-Ox)))+(abs((y-Oy)))) 
             if distance_passenger<previous_distance:
                 previous_distance=distance_passenger
                 solution=position_passenger
+        
+        #distance of the dropoff zone
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
-        #drop_off_zone_pt2=drop_off_zone_pt1
-        distance_drop_off=(abs((drop_off_x-Ox))+abs((drop_off_y-Oy)))
+        (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
+        if self.is_occupied((drop_off_x,drop_off_y)):
+            distance_drop_off=math.inf
+        else:
+            distance_drop_off=(abs((drop_off_x-Ox))+abs((drop_off_y-Oy)))
+        if self.is_occupied((drop_off2_x, drop_off2_y)):
+            distance_drop_off2=math.inf
+        else:
+            distance_drop_off2=(abs((drop_off2_x-Ox))+abs((drop_off2_y-Oy)))
+
+        if distance_drop_off<distance_drop_off2:
+            nearest_drop_off=distance_drop_off
+            nearest_drop_coordinate=(drop_off_x,drop_off_y)
+        else:
+            nearest_drop_off=distance_drop_off2
+            nearest_drop_coordinate=(drop_off2_x, drop_off2_y)
         nb_wagons=len(self.all_trains[self.nickname]['wagons'])
         if nb_wagons==0:
             distance_wagon=math.inf
-        """elif (drop_off_x,drop_off_y) in self.all_trains[self.nickname]["wagons"]:
+            """elif (drop_off_x,drop_off_y) in self.all_trains[self.nickname]["wagons"]:
             distance_wagon = math.inf""" #ds wär damit är nid i sich säuber dri fahrt bri drop off zone. aber mä müesst di zwöiti Koordinate ou no chegge
+            """
+        elif self.wagondropoff==1:
+            return self.optimum_droping_off(drop_off_x,drop_off_y)
+            """
         else:
-            distance_wagon=(distance_drop_off/(nb_wagons+0.0000001))
-
+            #distance_wagon=(nearest_drop_off/(nb_wagons+0.0000001))
+            distance_wagon=(nearest_drop_off*(0.95**nb_wagons))
+            #wagons werde hie ou viu z fest gwichtet!! 
+            #z.b mit nearest_drop_off*(0.95^nb_wagon)??
+            #distance_wagon=nearest_drop_off
+        
+        #should we go to the drop off zone or should we collect passengers
         if distance_wagon<previous_distance:
-            return (drop_off_x,drop_off_y)
+            return nearest_drop_coordinate
         else:
             return solution
         
+    def is_occupied(self, coordinate):
+        """ is checking if a spesific coordinate is already occupied, by a train or his wagons"""
+        for name in self.all_trains.keys():
+            #if self.all_trains[name]['alive'] == False:
+                #continue
+            if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']):
+                return True
+        return False
+        
+    def dropping_off_2_coordinates(self, x1_coordinate, y1_coordinate):
+        """opptimisez drop off"""
+        print(f'delivery zone {self.delivery_zone}') 
+        height,width=self.convert_grid((self.delivery_zone['height'],self.delivery_zone['width']))
+        x2_coordinate=x1_coordinate+width-1
+        y2_coordinate=y1_coordinate+height-1
+        print(f'coordinates of first point {x1_coordinate, y1_coordinate}')
+        print(f'coordinates of second point {x2_coordinate,y2_coordinate}') 
+        return (x2_coordinate, y2_coordinate)
+
     
     def convert_grid(self,object):
         """converts the object number into our grid to use as coordinates"""
@@ -209,15 +260,21 @@ class Agent(BaseAgent,Game):
         for i in range(self.WIDTH):
             for j in range(self.HEIGHT):
                 coordinate=tuple((i,j))
-                if coordinate == find_coordinate: #find the spesific input of our function
-                    dict_pos["B"].append(coordinate)
                 for name in self.all_trains.keys():
                     #if self.all_trains[name]['position'] == [-1,-1]:
                     #    continue wiu i ha gseh ds wenn ä Zug tot isch het är d Koordinate [-1,-1] ha eifach wöue sicher si ds es nid ds isch
-                    elif coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']) or coordinate == backpositon:
+                    if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']) or coordinate == backpositon:
                         dict_pos["-"].append(coordinate)                      
                     else:
-                        dict_pos["inf"].append((i,j))             
+                        dict_pos["inf"].append((i,j))
+                """if find_coordinate in dict_pos["-"]:
+                    luege was me denn söt mache, wöu itz killt er sech (wöu z feud isch e wall, drum nid dert druf!!)
+                    cha si das das ou z problem mit de zwe bots isch!!
+                    die die generelli funktion vo not wall bruche
+                """
+                if coordinate == find_coordinate: #find the spesific input of our function
+                    dict_pos["B"].append(coordinate)
+
         positions=((0,1),(0,-1),(1,0),(-1,0))
         counter=-1
         E=0
