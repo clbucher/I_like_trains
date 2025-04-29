@@ -1,4 +1,4 @@
-#version 2.2
+
 import random
 from common.base_agent import BaseAgent
 from common.move import Move
@@ -59,13 +59,15 @@ class Agent(BaseAgent,Game):
                 train_pos = self.convert_grid(train["position"])
                 tail_pos = self.convert_grid(train["wagons"][-1]) if train["wagons"] else None
                 this_train = False
+                tx, ty = self.convert_grid(train["position"])
+                tdx, tdy = train["direction"]
            
                 if target_pos == train_pos:
                     '''if it is the "head" of a train the we have to check if this train is faster or not to avoid a collision'''
                     if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
                         tx1, ty1 = train["direction"]
                         tx2, ty2 = self.all_trains[self.nickname]["direction"]
-                        if (-tx1, -ty1) != (tx2, ty2):
+                        if (-tx1, -ty1) != (tx2, ty2) and len(train["wagon"])== 0:
                             '''checking to see if it will be a head on collison'''
                             break
                     this_train = True
@@ -75,6 +77,9 @@ class Agent(BaseAgent,Game):
                     #uflade isch oder nid. Wiu wenn är niemert ufladet wird sech ds hinderste Wägeli im nächste Move wägbewegt ha
                     #wenn är aber no öpper am uflade isch denn isch der im nächste Move immer no es Wägeli. Darum hanis jetzt mau ganz drus gnoh
                     this_train = True
+                elif (tx+tdx, ty +tdy) == target_pos:
+                    this_train = True
+                
                 if this_train:
                     # List possible fallback directions
                     fallback_moves = [[0,1], [0,-1], [1,0], [-1,0]]
@@ -159,13 +164,17 @@ class Agent(BaseAgent,Game):
         
     def is_occupied(self, coordinate):
         """ is checking if a specific coordinate is already occupied, by a train or his wagons"""
+        x,y = coordinate
         for name in self.all_trains.keys():
             #if self.all_trains[name]['alive'] == False:
                 #continue
-            x,y = coordinate
+            tx, ty = self.convert_grid(self.all_trains[name]["position"])
+            tdx, tdy = self.all_trains[name]["direction"]
             if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']):
                 return True
             elif x == self.WIDTH or x < 0 or y == self.HEIGHT or y < 0:
+                return True
+            elif (tx+tdx, ty+tdy) == coordinate and name != self.nickname:
                 return True
         return False
         
@@ -197,14 +206,14 @@ class Agent(BaseAgent,Game):
         for i in object:
             new_obj.append(self.convert_grid(i))
         return new_obj         
-
+    """
     def wall(self,x,y,nx,ny):
-        """
+        
         this will be the first condition we will check when planing the next move since we:
         - check if we have to do a spesific move, as not to drive into the wall (True).
         - if we are going straight into the wall we will change direction
         If this is not the case we will retrn False.
-        """
+        
         turn_before_wall=self.miss_the_wall(x,y,nx,ny)
         match turn_before_wall: #will dictate the next move if there is a chance to collide with it
             case 'DOWN':
@@ -228,10 +237,10 @@ class Agent(BaseAgent,Game):
         return False
    
     def miss_the_wall(self,x,y,nx,ny):
-        """
+        
         checks if there is a wall in front of the train where the next move would be if we don't change direction.
         This will then also tell us in which direction we can't turn because there is also a wall there.
-        """
+        
         if (x+nx)==self.WIDTH or (x+nx)<0: #The train is on the right or left boarder
             match y:
                 case 0: #the train in on the top
@@ -250,9 +259,9 @@ class Agent(BaseAgent,Game):
                     return 'RIGHT OR LEFT'
                
     def is_not_a_wall(self,x,y):
-        """
+        
         we check that the next move would not lead us outside of the game
-        """
+        
         match self.next_move:
             case Move.UP:
                 (Nx,Ny)=(0, -1)
@@ -267,6 +276,7 @@ class Agent(BaseAgent,Game):
         else:
             return True
         
+    """
 
     def find_best_Path_coordonates(self,your_coordinate,find_coordinate):
         """We find a list of the coordonates of the best path to the passenger"""
