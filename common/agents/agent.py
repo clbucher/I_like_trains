@@ -1,14 +1,12 @@
-
+#version 2.2
+#128.179.154.221
 import random
 from common.base_agent import BaseAgent
 from common.move import Move
 from server.game import Game
 import math
 
-#next optimasitaions
-#TODO(Elina) debug the case where there are two trains (they will crash into the wall or into each other, don't know why)
-#drop off optimisation
-#last resort if next move would be wall or other train, then turn
+#TODO(Elina) 
 #improve weight of distance to drop-off zone in comparison to passengers
 #comment all of the code
 #prevent head on collison (similar function to is_occupied)
@@ -77,7 +75,7 @@ class Agent(BaseAgent,Game):
                     #uflade isch oder nid. Wiu wenn är niemert ufladet wird sech ds hinderste Wägeli im nächste Move wägbewegt ha
                     #wenn är aber no öpper am uflade isch denn isch der im nächste Move immer no es Wägeli. Darum hanis jetzt mau ganz drus gnoh
                     this_train = True
-                elif (tx+tdx, ty +tdy) == target_pos:
+                elif (tx+tdx, ty +tdy) == target_pos and name != self.nickname:
                     this_train = True
                 
                 if this_train:
@@ -140,10 +138,7 @@ class Agent(BaseAgent,Game):
         nb_wagons=len(self.all_trains[self.nickname]['wagons'])
         if nb_wagons==0:
             distance_wagon=math.inf
-            """
-        elif self.wagondropoff==1:
-            return self.optimum_droping_off(drop_off_x,drop_off_y)
-            """
+
         elif nb_wagons >= 8:
             distance_wagon=0
         else:
