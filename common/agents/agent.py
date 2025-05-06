@@ -42,11 +42,11 @@ class Agent(BaseAgent,Game):
         position_collect=self.what_to_collect()
         Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(self.train_coordinate, position_collect)
         next_move = self.find_best_Path_directions(Dicth_onary)
-        print(f'first_next_move {next_move}')
+        #print(f'first_next_move {next_move}')
         if self.check_if_collision(next_move,x,y):
-            print(f'second next move {next_move}')
+            #print(f'second next move {next_move}')
             next_move=self.next_move_prevent_collision(next_move,x,y)
-            print(f'third next move {next_move}')
+            #print(f'third next move {next_move}')
         print('')
         return next_move
         
