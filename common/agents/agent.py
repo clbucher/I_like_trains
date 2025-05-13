@@ -9,7 +9,7 @@ import math
 #TODO(Elina) 
 #improve weight of distance to drop-off zone in comparison to passengers
 #comment all of the code
-#prevent head on collison (similar function to is_occupied)
+
 
 #INFO: Aso I ha jetzt mau es paar vo dä Sache glöscht woni z gfühl ha ds mer sä nümme wärde bruche. 
 #Faus du glich no öppis bruchsch i ha aues kopiert. I gloubs mir chönnte theoretisch ou ds mit dr Wand lösche
@@ -36,33 +36,67 @@ class Agent(BaseAgent,Game):
         This method must return one of moves.MOVE
         """
         #will change game width into a coordinate system which is divided by cell size
+        #print('anfrage')
         self.convert_gamewith() 
         self.train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = self.train_coordinate
         position_collect=self.what_to_collect()
         Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(self.train_coordinate, position_collect)
         next_move = self.find_best_Path_directions(Dicth_onary)
-        #print(f'first_next_move {next_move}')
-        if self.check_if_collision(next_move,x,y):
-            #print(f'second next move {next_move}')
+        if self.check_if_collision_train(next_move,x,y):
             next_move=self.next_move_prevent_collision(next_move,x,y)
-            #print(f'third next move {next_move}')
-        print('')
+        elif self.other_will_collide(next_move,x,y):
+               next_move=Move.DROP
+        #print(next_move)
         return next_move
         
    
+    def other_will_collide(self,next_move,x,y):
+        """
+        if the other train will collide into our head in the next move, 
+        activate the boost 
+        """
+        #TODO es funktioniert no nid!!!!
+        print(" ")
+        print("before 1")
+        train_names=[]
+        nx,ny=self.convert_next_move(next_move)
+        for name in self.all_trains.keys():
+            if name!=self.nickname:
+                train_names.append(name)
+        print("after 1") 
+        for value in range(len(train_names)):
+            k=train_names[value]
+            print(f'this is k {k}')
+            print("before 2")
+            print(tuple(self.all_trains[k]['position']))
+            other_x,other_y=self.convert_grid(self.all_trains[train_names][k]['position'])
+            print("after 2")
+            print(self.all_trains[k]['direction'])
+            On_x,On_y=self.convert_grid(self.all_trains[train_names[k]['direction']])
+            print("after 3")
+            if ((other_x+On_x),(other_y+On_y))==(x+nx,y+ny):
+                return True
 
-    def check_if_collision(self,next_move,x,y):
-        """ it will check if the next move would make us collide with another train or with the head of another train
-        - returns True if we will collide with our next move
+
+    def convert_next_move(self,next_move):
+        """ 
+        converts next move into dx and dy
         """
         self.move_to_delta = {
             Move.UP:    (0, -1),
             Move.DOWN:  (0, 1),
             Move.RIGHT: (1, 0),
             Move.LEFT:  (-1, 0)
-        }
+            }
         dx, dy = self.move_to_delta[next_move]
+        return (dx,dy)
+    
+    def check_if_collision_train(self,next_move,x,y):
+        """ it will check if the next move would make us collide with another train or with the head of another train
+        - return: True if we will collide with our next move
+        """
+        dx,dy=self.convert_next_move(next_move)
         target_pos = (x + dx, y + dy)
 
         this_train = False
@@ -90,12 +124,13 @@ class Agent(BaseAgent,Game):
                     #uflade isch oder nid. Wiu wenn är niemert ufladet wird sech ds hinderste Wägeli im nächste Move wägbewegt ha
                     #wenn är aber no öpper am uflade isch denn isch der im nächste Move immer no es Wägeli. Darum hanis jetzt mau ganz drus gnoh
                     this_train = True
-                elif (tx+tdx, ty +tdy) == target_pos and name != self.nickname:
+                elif (tx+tdx, ty +tdy) == target_pos and name != self.nickname: #tupple!!
                     this_train = True
         return(this_train)
                 
     def next_move_prevent_collision(self,next_move,x,y):
-        """ this will tell us what move we have to do, as to not collide with another train on time
+        """ 
+        this will tell us what move we have to do, as to not collide with another train on time
         """
         # List possible fallback directions
         dx, dy = self.move_to_delta[next_move]
@@ -115,8 +150,10 @@ class Agent(BaseAgent,Game):
         return new_move
 
     def what_to_collect(self):
-        """gives us a dictionary with the fraction distance/value so that we can compare 
-        the different passengers with each other"""
+        """
+        gives us a dictionary with the fraction distance/value so that we can compare 
+        the different passengers with each other.
+        """
         previous_distance=math.inf
 
         #which is the best passenger to pick
@@ -129,7 +166,6 @@ class Agent(BaseAgent,Game):
             #we have chosen this estimator as the complexity is O(n) for the number of positons apart
             distance_passenger=((abs((x-Ox)))+(abs((y-Oy)))/(value/2)) 
             #TODO value wird i dere gliichig z fest gwichtet
-            #distance_passenger=((abs((x-Ox)))+(abs((y-Oy)))) 
             if distance_passenger<previous_distance:
                 previous_distance=distance_passenger
                 solution=position_passenger
@@ -201,9 +237,12 @@ class Agent(BaseAgent,Game):
     
     def convert_grid(self,object):
         """converts the object number into our grid to use as coordinates"""
+        print("inside function")
+        object=tuple(object)
         x,y=object
         x=int(x/self.cell_size)
         y=int(y/self.cell_size)
+        print("end function")
         return (x,y)
     
     def convert_gamewith(self):
@@ -212,7 +251,9 @@ class Agent(BaseAgent,Game):
         self.HEIGHT=int(self.game_height/self.cell_size)
 
     def convert_list(self,object):
-        """converts a list ino a list of numers into our coorinates (one number per cell)"""
+        """
+        converts a list ino a list of numers into our coorinates (one number per cell)
+        """
         new_obj=[]
         if object==[]:
             return new_obj
@@ -292,7 +333,9 @@ class Agent(BaseAgent,Game):
     """
 
     def find_best_Path_coordonates(self,your_coordinate,find_coordinate):
-        """We find a list of the coordonates of the best path to the passenger"""
+        """
+        We find a list of the coordonates of the best path to the passenger
+        """
         find_coordinate=tuple(find_coordinate)
         B=0
         (OP_x,OP_y)=your_coordinate
@@ -350,6 +393,13 @@ class Agent(BaseAgent,Game):
         return (path,B)
 
     def flood_grid(self, dict_pos, find_coordinate):
+        """
+        This function floods our grid with the distance to our curent position, until we arrive 
+        to our end destination. 
+        Input: dictionary with the positional values, coordinate we want to go to
+        Output: distance value to our final coordinate, updated dictonary with all the correct values,
+                find coordinate, 
+        """
         positions=((0,1),(0,-1),(1,0),(-1,0))
         counter=-1
         E=0
@@ -378,9 +428,11 @@ class Agent(BaseAgent,Game):
                             dict_pos["inf"].remove(new_coordinate)
                 if E==1:
                     break
-        return(B,dict_pos, find_coordinate,path_index)
+        return(B,dict_pos, find_coordinate, path_index)
         
     def find_path_pack(self, B,dict_pos, find_coordinate,path_index):
+        """
+        """
         E=0 # finding a trace back up the grid to the starting point
         positions=((0,1),(0,-1),(1,0),(-1,0))
         path=[]
