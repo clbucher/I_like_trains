@@ -23,47 +23,16 @@ class Agent(BaseAgent,Game):
         This method must return one of moves.MOVE
         """
         #will change game width into a coordinate system which is divided by cell size
-        #print('anfrage')
         self.convert_gamewith() 
         self.train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = self.train_coordinate
         position_collect=self.what_to_collect()
         Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(self.train_coordinate, position_collect)
         next_move = self.find_best_Path_directions(Dicth_onary)
+        print(next_move)
         if self.check_if_collision_train(next_move,x,y):
-            next_move=self.next_move_prevent_collision(next_move,x,y)
-        #elif self.other_will_collide(next_move,x,y):
-               #next_move=Move.DROP
-        #print(next_move)
+           next_move=self.next_move_prevent_collision(next_move,x,y)
         return next_move
-        
-   
-    def other_will_collide(self,next_move,x,y):
-        """
-        if the other train will collide into our head in the next move, 
-        activate the boost 
-        """
-        #TODO es funktioniert no nid!!!!
-        print(" ")
-        print("before 1")
-        train_names=[]
-        nx,ny=self.convert_next_move(next_move)
-        for name in self.all_trains.keys():
-            if name!=self.nickname:
-                train_names.append(name)
-        print("after 1") 
-        for value in range(len(train_names)):
-            k=train_names[value]
-            print(f'this is k {k}')
-            print("before 2")
-            print(tuple(self.all_trains[k]['position']))
-            other_x,other_y=self.convert_grid(self.all_trains[train_names][k]['position'])
-            print("after 2")
-            print(self.all_trains[k]['direction'])
-            On_x,On_y=self.convert_direction(self.all_trains[train_names[k]['direction']])
-            print("after 3")
-            if ((other_x+On_x),(other_y+On_y))==(x+nx,y+ny):
-                return True
 
 
     def convert_next_move(self,next_move):
@@ -96,7 +65,6 @@ class Agent(BaseAgent,Game):
                 tdx, tdy = self.convert_direction(train["direction"])
            
                 if target_pos == train_pos: 
-                    #TODO müesse mir endere, dörfe nie dri fahre!!
                     '''if it is the "head" of a train the we have to check if this train is faster or not to avoid a collision'''
                     if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
                         tx1, ty1 = self.convert_direction(train["direction"])
@@ -107,11 +75,8 @@ class Agent(BaseAgent,Game):
                     this_train = True
                 elif target_pos == tail_pos or target_pos in self.convert_list(train["wagons"]):
                     '''if it is a wagon in the middle of the train we cannnot take this path'''
-                    #I probiere no ds mä eigentlech ds hindere Ändi vom Zug nid muess umgah aber drfür müessti usefinde ob dr Zug momentan öpper am
-                    #uflade isch oder nid. Wiu wenn är niemert ufladet wird sech ds hinderste Wägeli im nächste Move wägbewegt ha
-                    #wenn är aber no öpper am uflade isch denn isch der im nächste Move immer no es Wägeli. Darum hanis jetzt mau ganz drus gnoh
                     this_train = True
-                elif (tx+tdx, ty +tdy) == target_pos and name != self.nickname: #tupple!!
+                elif (tx+tdx, ty +tdy) == target_pos and name != self.nickname:
                     this_train = True
         return(this_train)
                 
@@ -120,7 +85,8 @@ class Agent(BaseAgent,Game):
         this will tell us what move we have to do, as to not collide with another train on time
         """
         # List possible fallback directions
-        dx, dy = self.move_to_delta[next_move]
+        next_move=next_move
+        dx, dy = self.convert_next_move(next_move)
         fallback_moves = [[0,1], [0,-1], [1,0], [-1,0]]
         if [dx, dy] in fallback_moves:
             fallback_moves.remove([dx, dy])  # remove current blocked direction
@@ -130,10 +96,10 @@ class Agent(BaseAgent,Game):
         # Remove fallback moves that are also occupied
         fallback_moves = [m for m in fallback_moves if not self.is_occupied((x + m[0], y + m[1]))]
         if fallback_moves:
-            #TODO z random chöi mir de no optimiere
             dx, dy = random.choice(fallback_moves)
             delta_to_move = {(1,0): Move.RIGHT, (-1,0): Move.LEFT, (0,1): Move.DOWN, (0,-1): Move.UP}
             new_move = delta_to_move[(dx, dy)]
+            print(f'this will be the next moce{new_move}')
         return new_move
 
     def what_to_collect(self):
@@ -152,11 +118,10 @@ class Agent(BaseAgent,Game):
             (Ox,Oy)=self.train_coordinate
             #we have chosen this estimator as the complexity is O(n) for the number of positons apart
             distance_passenger=((abs((x-Ox)))+(abs((y-Oy)))/(value/2)) 
-            #TODO value wird i dere gliichig z fest gwichtet
             if distance_passenger<previous_distance:
                 previous_distance=distance_passenger
                 solution=position_passenger
-        
+
         #distance of the dropoff zone
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
         (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
@@ -180,17 +145,8 @@ class Agent(BaseAgent,Game):
         if nb_wagons==0:
             distance_wagon=math.inf
 
-        #elif nb_wagons >= 8:
-            #distance_wagon=0
         else:
-            #distance_wagon=(nearest_drop_off/(nb_wagons+0.0000001))
             distance_wagon=(nearest_drop_off*(0.95**nb_wagons))
-            #wagons werde hie ou viu z fest gwichtet!! 
-            #z.b mit nearest_drop_off*(0.95^nb_wagon)??
-            #distance_wagon=nearest_drop_off
-            #I weiss nid obs nume isch wenns 2 Züg het aber jetzt geit är fasch nie ga drop offe und
-            #je länger ds dr Zug isch desto afälliger für Fähler. Aso i würd es Limit mache ab däm mä sicher geit
-            #ga drop offe. 
         
         #should we go to the drop off zone or should we collect passengers
         if distance_wagon<previous_distance:
@@ -202,8 +158,6 @@ class Agent(BaseAgent,Game):
         """ is checking if a specific coordinate is already occupied, by a train or his wagons"""
         x,y = coordinate
         for name in self.all_trains.keys():
-            #if self.all_trains[name]['alive'] == False:
-                #continue
             tx, ty = self.convert_grid(self.all_trains[name]["position"])
             tdx, tdy = self.convert_direction(self.all_trains[name]["direction"])
             if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']):
@@ -250,77 +204,6 @@ class Agent(BaseAgent,Game):
         for i in object:
             new_obj.append(self.convert_grid(i))
         return new_obj         
-    """
-    def wall(self,x,y,nx,ny):
-        
-        this will be the first condition we will check when planing the next move since we:
-        - check if we have to do a spesific move, as not to drive into the wall (True).
-        - if we are going straight into the wall we will change direction
-        If this is not the case we will retrn False.
-        
-        turn_before_wall=self.miss_the_wall(x,y,nx,ny)
-        match turn_before_wall: #will dictate the next move if there is a chance to collide with it
-            case 'DOWN':
-                self.next_move= [Move.DOWN]
-                return True
-            case 'UP':
-                self.next_move= [Move.UP]
-                return True
-            case 'DOWN OR UP':
-                self.next_move=[Move.UP, Move.DOWN]
-                return True
-            case 'RIGHT':
-                self.next_move= [Move.RIGHT]
-                return True
-            case 'LEFT':
-                self.next_move= [Move.LEFT]
-                return True
-            case 'RIGHT OR LEFT':
-                self.next_move=[Move.LEFT,Move.RIGHT]
-                return True
-        return False
-   
-    def miss_the_wall(self,x,y,nx,ny):
-        
-        checks if there is a wall in front of the train where the next move would be if we don't change direction.
-        This will then also tell us in which direction we can't turn because there is also a wall there.
-        
-        if (x+nx)==self.WIDTH or (x+nx)<0: #The train is on the right or left boarder
-            match y:
-                case 0: #the train in on the top
-                    return 'DOWN'
-                case self.HEIGHT: #the train is on the bottom
-                    return 'UP'
-                case _:
-                    return 'DOWN OR UP'
-        elif (y+ny)==self.HEIGHT or (y+ny)<0: #the train is on the top or bottom of the playboard
-            match x:
-                case 0: #the train is next to the left boarder
-                    return 'RIGHT'
-                case self.WIDTH: #the train is next to the right boarder
-                    return 'LEFT'
-                case _:
-                    return 'RIGHT OR LEFT'
-               
-    def is_not_a_wall(self,x,y):
-        
-        we check that the next move would not lead us outside of the game
-        
-        match self.next_move:
-            case Move.UP:
-                (Nx,Ny)=(0, -1)
-            case Move.DOWN:
-                (Nx,Ny)=(0, 1)
-            case Move.RIGHT:
-                (Nx,Ny)=(1, 0)
-            case Move.LEFT:
-                (Nx,Ny)=(-1, 0)
-        if (x+Nx)==self.WIDTH or (x+Nx)<0 or (y+Ny)==self.HEIGHT or (y+Ny)<0:
-            return False
-        else:
-            return True
-        
-    """
 
     def find_best_Path_coordonates(self,your_coordinate,find_coordinate):
         """
@@ -340,41 +223,10 @@ class Agent(BaseAgent,Game):
             for j in range(self.HEIGHT):
                 coordinate=tuple((i,j))
                 for name in self.all_trains.keys():
-                    #if self.all_trains[name]['position'] == [-1,-1]:
-                    #    continue wiu i ha gseh ds wenn ä Zug tot isch het är d Koordinate [-1,-1] ha eifach wöue sicher si ds es nid ds isch
-                    if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']) or coordinate == backpositon:
+                    if (coordinate == self.convert_grid(self.all_trains[name]['position'])) or (coordinate in self.convert_list(self.all_trains[name]['wagons'])) or (coordinate == backpositon):
                         dict_pos["-"].append(coordinate)                      
                     else:
                         dict_pos["inf"].append((i,j))
-                if find_coordinate in dict_pos["-"]:
-                    ''' eigentlech nomau ds gliche wie dobe. I weiss ehrlechgseit nid obs ds wük brucht. Aber essentially suechts eifach es "target" grad näbem originale "target" '''
-                    for name, train in self.all_trains.items():
-                        this_train = False
-                        train_pos = self.convert_grid(train["position"])
-                        tail_pos = self.convert_grid(train["wagons"][-1]) if train["wagons"] else None
-    
-                        if find_coordinate == train_pos:
-                            if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
-                                    tx1, ty1 = self.convert_direction(train["direction"])
-                                    tx2, ty2 = self.convert_direction(self.all_trains[self.nickname]["direction"])
-                                    if (-tx1, -ty1) != (tx2, ty2):
-                                        break
-                            this_train = True
-                        elif find_coordinate == tail_pos or find_coordinate in self.convert_list(train["wagons"]):
-                            this_train = True
-
-                        if this_train:
-                            Moves=[[0,1],[0,-1],[1,0],[-1,0]]
-                            x,y = find_coordinate
-                            back_dir = [-i for i in self.convert_direction(self.all_trains[self.nickname]["direction"])]
-                            if back_dir in Moves:
-                                Moves.remove(back_dir)  # don't go backward
-                            # Remove fallback moves that are also occupied
-                            Moves = [m for m in Moves if not self.is_occupied((x + m[0], y + m[1]))]
-                            next = random.choice(Moves)
-                            dx,dy = tuple(next)
-                            find_coordinate = (x+dx, y+dy)
-                            break
                 if coordinate == find_coordinate: #find the spesific input of our function
                     dict_pos["B"].append(coordinate)
         
@@ -418,6 +270,7 @@ class Agent(BaseAgent,Game):
                             dict_pos["inf"].remove(new_coordinate)
                 if E==1:
                     break
+
         return(B,dict_pos, find_coordinate, path_index)
         
     def find_path_pack(self, B,dict_pos, find_coordinate,path_index):
@@ -428,14 +281,13 @@ class Agent(BaseAgent,Game):
         path=[]
         counter=B
         dict_pos["H"]=[]
-        while E==0:
+        for E in range(B):
             counter-=1
             for pt in positions:
                 pt_x,pt_y=path_index
                 nx,ny=pt
                 searching_pt=(pt_x+nx,pt_y+ny)
                 if counter==0:
-                    E=1
                     path.reverse()
                     path.append(find_coordinate)
                     return (path,B)
