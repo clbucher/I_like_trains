@@ -7,7 +7,6 @@ from server.game import Game
 import math
 
 #TODO(Elina) 
-#improve weight of distance to drop-off zone in comparison to passengers
 #comment all of the code
 
 # Student scipers, will be automatically used to evaluate your code
@@ -23,21 +22,22 @@ class Agent(BaseAgent,Game):
         This method must return one of moves.MOVE
         """
         #will change game width into a coordinate system which is divided by cell size
-        self.convert_gamewith() 
+        self.convert_gamewith()
+
+
         self.train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = self.train_coordinate
         position_collect=self.what_to_collect()
-        Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(self.train_coordinate, position_collect)
-        next_move = self.find_best_Path_directions(Dicth_onary)
-        print(next_move)
+        self.Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(self.train_coordinate, position_collect)
+        next_move = self.find_best_Path_directions(self.Dicth_onary)
+        #if our next move still gets us into a situation we would die
         if self.check_if_collision_train(next_move,x,y):
            next_move=self.next_move_prevent_collision(next_move,x,y)
         return next_move
 
-
     def convert_next_move(self,next_move):
         """ 
-        converts next move into dx and dy
+        converts next move into coordinates dx,dy
         """
         self.move_to_delta = {
             Move.UP:    (0, -1),
@@ -56,25 +56,23 @@ class Agent(BaseAgent,Game):
         target_pos = (x + dx, y + dy)
 
         this_train = False
-        if self.is_occupied(target_pos):
-            '''checking to see if the next move will drive us into anything'''
+        if self.is_occupied(target_pos): #checking to see if the next move will drive us into anything
             for name, train in self.all_trains.items():
                 train_pos = self.convert_grid(train["position"])
                 tail_pos = self.convert_grid(train["wagons"][-1]) if train["wagons"] else None
                 tx, ty = self.convert_grid(train["position"])
                 tdx, tdy = self.convert_direction(train["direction"])
-           
+                #if it is the "head" of a train the we have to check if this train is faster or not to avoid a collision
                 if target_pos == train_pos: 
-                    '''if it is the "head" of a train the we have to check if this train is faster or not to avoid a collision'''
                     if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
                         tx1, ty1 = self.convert_direction(train["direction"])
                         tx2, ty2 = self.convert_direction(self.all_trains[self.nickname]["direction"])
-                        if (-tx1, -ty1) != (tx2, ty2) and len(train["wagons"])== 0:
-                            '''checking to see if it will be a head on collison'''
+                        if (-tx1, -ty1) != (tx2, ty2) and len(train["wagons"])== 0: 
+                            #checking to see if it will be a head on collison
                             break
                     this_train = True
                 elif target_pos == tail_pos or target_pos in self.convert_list(train["wagons"]):
-                    '''if it is a wagon in the middle of the train we cannnot take this path'''
+                    #if it is a wagon in the middle of the train we cannnot take this path
                     this_train = True
                 elif (tx+tdx, ty +tdy) == target_pos and name != self.nickname:
                     this_train = True
@@ -84,7 +82,6 @@ class Agent(BaseAgent,Game):
         """ 
         this will tell us what move we have to do, as to not collide with another train on time
         """
-        # List possible fallback directions
         next_move=next_move
         dx, dy = self.convert_next_move(next_move)
         fallback_moves = [[0,1], [0,-1], [1,0], [-1,0]]
@@ -99,18 +96,15 @@ class Agent(BaseAgent,Game):
             dx, dy = random.choice(fallback_moves)
             delta_to_move = {(1,0): Move.RIGHT, (-1,0): Move.LEFT, (0,1): Move.DOWN, (0,-1): Move.UP}
             new_move = delta_to_move[(dx, dy)]
-            print(f'this will be the next moce{new_move}')
         return new_move
 
     def what_to_collect(self):
         """
-        gives us a dictionary with the fraction distance/value so that we can compare 
-        the different passengers with each other.
+        chooses what to collect next or if it goes to the drop off zone.
         """
         previous_distance=math.inf
 
         #which is the best passenger to pick
-        
         for number in range(len(self.passengers)):
             value=self.passengers[number]['value']
             position_passenger=self.convert_grid(self.passengers[number]['position'])
@@ -155,7 +149,9 @@ class Agent(BaseAgent,Game):
             return solution
         
     def is_occupied(self, coordinate):
-        """ is checking if a specific coordinate is already occupied, by a train or his wagons"""
+        """ 
+        checks if a specific coordinate is already occupied, by a train or his wagons
+        """
         x,y = coordinate
         for name in self.all_trains.keys():
             tx, ty = self.convert_grid(self.all_trains[name]["position"])
@@ -169,7 +165,7 @@ class Agent(BaseAgent,Game):
         return False
         
     def dropping_off_2_coordinates(self, x1_coordinate, y1_coordinate):
-        """optimisez drop off"""
+        """ finds the second coordinate of the drop off zone """
         height,width=self.convert_grid((self.delivery_zone['height'],self.delivery_zone['width']))
         x2_coordinate=x1_coordinate+width-1
         y2_coordinate=y1_coordinate+height-1
@@ -177,7 +173,7 @@ class Agent(BaseAgent,Game):
 
     
     def convert_grid(self,object):
-        """converts the object number into our grid to use as coordinates"""
+        """converts the object number into a single digit grid to use as coordinates"""
         x=object[0]
         y=object[1]
         x=int(x/self.cell_size)
@@ -190,13 +186,13 @@ class Agent(BaseAgent,Game):
         return(tuple((x,y)))
     
     def convert_gamewith(self):
-        """converts the height and width into a number for every cell"""
+        """converts the height and width into a single coordinate grid"""
         self.WIDTH=int(self.game_width/self.cell_size)
         self.HEIGHT=int(self.game_height/self.cell_size)
 
     def convert_list(self,object):
         """
-        converts a list ino a list of numers into our coorinates (one number per cell)
+        converts a list ino a list of numers into a single coorinates grid
         """
         new_obj=[]
         if object==[]:
@@ -207,7 +203,7 @@ class Agent(BaseAgent,Game):
 
     def find_best_Path_coordonates(self,your_coordinate,find_coordinate):
         """
-        We find a list of the coordonates of the best path to the passenger
+        We find a list of the coordonates of the best path to the passenger using the Dijkstra's Algorithm
         """
         find_coordinate=tuple(find_coordinate)
         B=0
@@ -274,9 +270,10 @@ class Agent(BaseAgent,Game):
         return(B,dict_pos, find_coordinate, path_index)
         
     def find_path_pack(self, B,dict_pos, find_coordinate,path_index):
+        """ 
+        We go through our flooded grid and find the shortest path pack to the initial position.
+        return: a list of coordinate
         """
-        """
-        E=0 # finding a trace back up the grid to the starting point
         positions=((0,1),(0,-1),(1,0),(-1,0))
         path=[]
         counter=B
@@ -299,7 +296,7 @@ class Agent(BaseAgent,Game):
                     break
 
     def find_best_Path_directions(self, path):
-        """this translates the list of the path into movements that we have to do"""
+        """this translates the list of the best path into movements we have to do next"""
         (x,y)=self.convert_grid(self.all_trains[self.nickname]["position"])
         (x1, y1) = path[0]
         Nx=(x1-x)
