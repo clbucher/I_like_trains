@@ -10,19 +10,6 @@ import math
 #improve weight of distance to drop-off zone in comparison to passengers
 #comment all of the code
 
-
-#INFO: Aso I ha jetzt mau es paar vo dä Sache glöscht woni z gfühl ha ds mer sä nümme wärde bruche. 
-#Faus du glich no öppis bruchsch i ha aues kopiert. I gloubs mir chönnte theoretisch ou ds mit dr Wand lösche
-#Wiu i ha ds jetzt eigentlech ids is_occupied tah. I gloubs dr main bug isch wüklech es Problem vo ihne wiu i ha
-#wöue ufem Forum frage und es het ou scho öpper anders dä Fähler bemerkt. I ha jetzt voraum probiert ds es nümm i sich säuber
-#oder anderi Züg dri fahrt
-
-#TODO(Celia) I versueche usezfinde ob mä cha gseh gseh ob ä Zug grad am Passengers uflade isch oder nid. De 
-#chönnt mäh nämlech no nächer hinder dä anderä Züg düre. Plus i wott probiere ds avoide ds mä ine Zug inefahr
-#wenn är vor Site chunt und uf ds gliche Fäudli wott wie mir!
-
-
-
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
 class Agent(BaseAgent,Game):
@@ -45,8 +32,8 @@ class Agent(BaseAgent,Game):
         next_move = self.find_best_Path_directions(Dicth_onary)
         if self.check_if_collision_train(next_move,x,y):
             next_move=self.next_move_prevent_collision(next_move,x,y)
-        elif self.other_will_collide(next_move,x,y):
-               next_move=Move.DROP
+        #elif self.other_will_collide(next_move,x,y):
+               #next_move=Move.DROP
         #print(next_move)
         return next_move
         
@@ -73,7 +60,7 @@ class Agent(BaseAgent,Game):
             other_x,other_y=self.convert_grid(self.all_trains[train_names][k]['position'])
             print("after 2")
             print(self.all_trains[k]['direction'])
-            On_x,On_y=self.convert_grid(self.all_trains[train_names[k]['direction']])
+            On_x,On_y=self.convert_direction(self.all_trains[train_names[k]['direction']])
             print("after 3")
             if ((other_x+On_x),(other_y+On_y))==(x+nx,y+ny):
                 return True
@@ -106,14 +93,14 @@ class Agent(BaseAgent,Game):
                 train_pos = self.convert_grid(train["position"])
                 tail_pos = self.convert_grid(train["wagons"][-1]) if train["wagons"] else None
                 tx, ty = self.convert_grid(train["position"])
-                tdx, tdy = train["direction"]
+                tdx, tdy = self.convert_direction(train["direction"])
            
                 if target_pos == train_pos: 
                     #TODO müesse mir endere, dörfe nie dri fahre!!
                     '''if it is the "head" of a train the we have to check if this train is faster or not to avoid a collision'''
                     if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
-                        tx1, ty1 = train["direction"]
-                        tx2, ty2 = self.all_trains[self.nickname]["direction"]
+                        tx1, ty1 = self.convert_direction(train["direction"])
+                        tx2, ty2 = self.convert_direction(self.all_trains[self.nickname]["direction"])
                         if (-tx1, -ty1) != (tx2, ty2) and len(train["wagons"])== 0:
                             '''checking to see if it will be a head on collison'''
                             break
@@ -137,7 +124,7 @@ class Agent(BaseAgent,Game):
         fallback_moves = [[0,1], [0,-1], [1,0], [-1,0]]
         if [dx, dy] in fallback_moves:
             fallback_moves.remove([dx, dy])  # remove current blocked direction
-        back_dir = [-i for i in self.all_trains[self.nickname]["direction"]]
+        back_dir = [-i for i in self.convert_direction(self.all_trains[self.nickname]["direction"])]
         if back_dir in fallback_moves:
             fallback_moves.remove(back_dir)  # don't go backward
         # Remove fallback moves that are also occupied
@@ -218,7 +205,7 @@ class Agent(BaseAgent,Game):
             #if self.all_trains[name]['alive'] == False:
                 #continue
             tx, ty = self.convert_grid(self.all_trains[name]["position"])
-            tdx, tdy = self.all_trains[name]["direction"]
+            tdx, tdy = self.convert_direction(self.all_trains[name]["direction"])
             if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']):
                 return True
             elif x == self.WIDTH or x < 0 or y == self.HEIGHT or y < 0:
@@ -237,13 +224,16 @@ class Agent(BaseAgent,Game):
     
     def convert_grid(self,object):
         """converts the object number into our grid to use as coordinates"""
-        print("inside function")
-        object=tuple(object)
-        x,y=object
+        x=object[0]
+        y=object[1]
         x=int(x/self.cell_size)
         y=int(y/self.cell_size)
-        print("end function")
-        return (x,y)
+        return (tuple((x,y)))
+    
+    def convert_direction(self,object):
+        x=object[0]
+        y=object[1]
+        return(tuple((x,y)))
     
     def convert_gamewith(self):
         """converts the height and width into a number for every cell"""
@@ -339,7 +329,7 @@ class Agent(BaseAgent,Game):
         find_coordinate=tuple(find_coordinate)
         B=0
         (OP_x,OP_y)=your_coordinate
-        (Ox,Oy)=self.all_trains[self.nickname]['direction']
+        (Ox,Oy)=self.convert_direction(self.all_trains[self.nickname]['direction'])
         backpositon=tuple(((OP_x-Ox),(OP_y-Oy))) # going packwards is not possible and seen as an obstacle
         dict_pos={}
         dict_pos[0]=[(OP_x,OP_y)]
@@ -365,8 +355,8 @@ class Agent(BaseAgent,Game):
     
                         if find_coordinate == train_pos:
                             if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
-                                    tx1, ty1 = train["direction"]
-                                    tx2, ty2 = self.all_trains[self.nickname]["direction"]
+                                    tx1, ty1 = self.convert_direction(train["direction"])
+                                    tx2, ty2 = self.convert_direction(self.all_trains[self.nickname]["direction"])
                                     if (-tx1, -ty1) != (tx2, ty2):
                                         break
                             this_train = True
@@ -376,7 +366,7 @@ class Agent(BaseAgent,Game):
                         if this_train:
                             Moves=[[0,1],[0,-1],[1,0],[-1,0]]
                             x,y = find_coordinate
-                            back_dir = [-i for i in self.all_trains[self.nickname]["direction"]]
+                            back_dir = [-i for i in self.convert_direction(self.all_trains[self.nickname]["direction"])]
                             if back_dir in Moves:
                                 Moves.remove(back_dir)  # don't go backward
                             # Remove fallback moves that are also occupied
