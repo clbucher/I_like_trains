@@ -5,7 +5,6 @@ from common.base_agent import BaseAgent
 from common.move import Move
 from server.game import Game
 import math
-from datetime import datetime
 
 #TODO(Elina) 
 #comment all of the code
@@ -22,27 +21,18 @@ class Agent(BaseAgent,Game):
 
         This method must return one of moves.MOVE
         """
-        #time_before=datetime.now()
         #will change game width into a coordinate system which is divided by cell size
         self.convert_gamewith()
-    
+
 
         self.train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = self.train_coordinate
         position_collect=self.what_to_collect()
-        
         self.Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(self.train_coordinate, position_collect)
         next_move = self.find_best_Path_directions(self.Dicth_onary)
         #if our next move still gets us into a situation we would die
         if self.check_if_collision_train(next_move,x,y):
            next_move=self.next_move_prevent_collision(next_move,x,y)
-        """
-        time_after=datetime.now()
-        time_after2=datetime.timestamp(time_after)
-        time_before2=datetime.timestamp(time_before)
-        time_difference=time_after2-time_before2
-        print(f'difference {time_difference}, time after {time_after}, time before {time_before}')
-        """
         return next_move
 
     def convert_next_move(self,next_move):
@@ -74,12 +64,12 @@ class Agent(BaseAgent,Game):
                 tdx, tdy = self.convert_direction(train["direction"])
                 #if it is the "head" of a train the we have to check if this train is faster or not to avoid a collision
                 if target_pos == train_pos: 
-                    #if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
-                    tx1, ty1 = self.convert_direction(train["direction"])
-                    tx2, ty2 = self.convert_direction(self.all_trains[self.nickname]["direction"])
-                    #if (-tx1, -ty1) != (tx2, ty2) and len(train["wagons"])== 0: 
+                    if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
+                        tx1, ty1 = self.convert_direction(train["direction"])
+                        tx2, ty2 = self.convert_direction(self.all_trains[self.nickname]["direction"])
+                        if (-tx1, -ty1) != (tx2, ty2) and len(train["wagons"])== 0: 
                             #checking to see if it will be a head on collison
-                    #        break
+                            break
                     this_train = True
                 elif target_pos == tail_pos or target_pos in self.convert_list(train["wagons"]):
                     #if it is a wagon in the middle of the train we cannnot take this path
@@ -212,41 +202,70 @@ class Agent(BaseAgent,Game):
         return new_obj         
 
     def find_best_Path_coordonates(self,your_coordinate,find_coordinate):
-        """
-        We find a list of the coordonates of the best path to the passenger using the Dijkstra's Algorithm
-        """
-        find_coordinate=tuple(find_coordinate)
-        B=0
-        (OP_x,OP_y)=your_coordinate
-        (Ox,Oy)=self.convert_direction(self.all_trains[self.nickname]['direction'])
-        backpositon=tuple(((OP_x-Ox),(OP_y-Oy))) # going packwards is not possible and seen as an obstacle
-        dict_pos={}
-        dict_pos[0]=[(OP_x,OP_y)]
-        dict_pos["inf"] = []
-        dict_pos["B"]=[]
-        dict_pos["-"]=[]
-        for i in range(self.WIDTH):
-            for j in range(self.HEIGHT):
-                coordinate=tuple((i,j))
-                for name in self.all_trains.keys():
-                    if (coordinate == self.convert_grid(self.all_trains[name]['position'])) or (coordinate in self.convert_list(self.all_trains[name]['wagons'])) or (coordinate == backpositon):
-                        dict_pos["-"].append(coordinate)                      
-                    else:
-                        dict_pos["inf"].append((i,j))
-                if coordinate == find_coordinate: #find the spesific input of our function
-                    dict_pos["B"].append(coordinate)
-        
-        B,dict_pos, find_coordinate,path_index=self.flood_grid(dict_pos, find_coordinate)
-        path,B=self.find_path_pack(B,dict_pos, find_coordinate,path_index)
-        return (path,B)
-
+            """
+            We find a list of the coordonates of the best path to the passenger
+            """
+            find_coordinate=tuple(find_coordinate)
+            B=0
+            (OP_x,OP_y)=your_coordinate
+            (Ox,Oy)=self.convert_direction(self.all_trains[self.nickname]['direction'])
+            backpositon=tuple(((OP_x-Ox),(OP_y-Oy))) # going packwards is not possible and seen as an obstacle
+            dict_pos={}
+            dict_pos[0]=[(OP_x,OP_y)]
+            dict_pos["inf"] = []
+            dict_pos["B"]=[]
+            dict_pos["-"]=[]
+            dict_pos["-"].append(backpositon)
+            for name in self.all_trains.keys():
+                #if self.all_trains[name]['position'] == [-1,-1]:
+                #    continue wiu i ha gseh ds wenn ä Zug tot isch het är d Koordinate [-1,-1] ha eifach wöue sicher si ds es nid ds isch
+                head = self.convert_grid(self.all_trains[name]['position'])
+                dict_pos["-"].append(head)          
+                for wagon in self.convert_list(self.all_trains[name]['wagons']):
+                    dict_pos["-"].append(wagon)
+                """
+                if find_coordinate in dict_pos["-"]:
+                    ''' eigentlech nomau ds gliche wie dobe. I weiss ehrlechgseit nid obs ds wük brucht. Aber essentially suechts eifach es "target" grad näbem originale "target" '''
+                    for name, train in self.all_trains.items():
+                        this_train = False
+                        train_pos = self.convert_grid(train["position"])
+                        tail_pos = self.convert_grid(train["wagons"][-1]) if train["wagons"] else None
+       
+                            if find_coordinate == train_pos:
+                                if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
+                                        tx1, ty1 = self.convert_direction(train["direction"])
+                                        tx2, ty2 = self.convert_direction(self.all_trains[self.nickname]["direction"])
+                                        if (-tx1, -ty1) != (tx2, ty2) and name != self.nickname:
+                                            break
+                                this_train = True
+                            elif find_coordinate == tail_pos or find_coordinate in self.convert_list(train["wagons"]):
+                                this_train = True
+                            if this_train:
+                                Moves=[[0,1],[0,-1],[1,0],[-1,0]]
+                                x,y = find_coordinate
+                                back_dir = [-i for i in self.convert_direction(self.all_trains[self.nickname]["direction"])]
+                                if back_dir in Moves:
+                                    Moves.remove(back_dir)  # don't go backward
+                                # Remove fallback moves that are also occupied
+                                Moves = [m for m in Moves if not self.is_occupied((x + m[0], y + m[1]))]
+                                next = random.choice(Moves)
+                                dx,dy = tuple(next)
+                                find_coordinate = (x+dx, y+dy)
+                                break
+                    """
+                   
+            dict_pos["B"].append(find_coordinate)
+           
+            B,dict_pos, find_coordinate,path_index=self.flood_grid(dict_pos, find_coordinate)
+            path,B=self.find_path_pack(B,dict_pos, find_coordinate,path_index)
+            return (path,B)
     def flood_grid(self, dict_pos, find_coordinate):
         """
-        This function floods our grid with the distance to our curent position, until we arrive 
-        to our end destination. 
+        This function floods our grid with the distance to our curent position, until we arrive
+        to our end destination.
         Input: dictionary with the positional values, coordinate we want to go to
         Output: distance value to our final coordinate, updated dictonary with all the correct values,
-                find coordinate, 
+                find coordinate,
         """
         positions=((0,1),(0,-1),(1,0),(-1,0))
         counter=-1
@@ -263,7 +282,12 @@ class Agent(BaseAgent,Game):
                     # check if we are out of bound
                     if self.HEIGHT==(index_y+ny) or self.WIDTH<(index_x+nx) or (index_y+ny)<0 or (index_x+nx)<0:
                         continue
-                    if new_coordinate in dict_pos["inf"] or new_coordinate in dict_pos["B"]:
+                    i = False
+                    for key in dict_pos.keys():
+                        if new_coordinate in dict_pos[key]:
+                            i = True
+                    if not i:
+                        print('im heere')
                         new_value=(old_value+1)
                         if new_coordinate == find_coordinate:
                             E=1
@@ -272,23 +296,19 @@ class Agent(BaseAgent,Game):
                             break
                         dict_pos[new_value].append(new_coordinate)
                         #update all the values to be on the newest stand
-                        if new_coordinate in dict_pos["inf"]:
-                            dict_pos["inf"].remove(new_coordinate)
                 if E==1:
                     break
-
         return(B,dict_pos, find_coordinate, path_index)
-        
+           
     def find_path_pack(self, B,dict_pos, find_coordinate,path_index):
-        """ 
-        We go through our flooded grid and find the shortest path pack to the initial position.
-        return: a list of coordinate
         """
+        """
+        E=0 # finding a trace back up the grid to the starting point
         positions=((0,1),(0,-1),(1,0),(-1,0))
         path=[]
         counter=B
         dict_pos["H"]=[]
-        for E in range(B):
+        for i in range(B):
             counter-=1
             for pt in positions:
                 pt_x,pt_y=path_index
@@ -304,9 +324,8 @@ class Agent(BaseAgent,Game):
                     dict_pos["H"].append((pt_y+ny, pt_x+nx))
                     dict_pos[counter].remove((pt_x+nx, pt_y+ny))
                     break
-
     def find_best_Path_directions(self, path):
-        """this translates the list of the best path into movements we have to do next"""
+        """this translates the list of the path into movements that we have to do"""
         (x,y)=self.convert_grid(self.all_trains[self.nickname]["position"])
         (x1, y1) = path[0]
         Nx=(x1-x)
