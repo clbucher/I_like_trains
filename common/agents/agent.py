@@ -117,6 +117,8 @@ class Agent(BaseAgent,Game):
         previous_distance=math.inf
 
         #which is the best passenger to pick
+
+        #which is the best passenger to pick
         for number in range(len(self.passengers)):
             value=self.passengers[number]['value']
             position_passenger=self.convert_grid(self.passengers[number]['position'])
@@ -127,9 +129,19 @@ class Agent(BaseAgent,Game):
             if distance_passenger<previous_distance:
                 previous_distance=distance_passenger
                 solution=position_passenger
+        
+        #distance of the dropoff zone
 
         #distance to the dropoff zone
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
+        (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates
+        distance_drop_off=(abs((drop_off_x-Ox))+abs((drop_off_y-Oy)))
+        distance_drop_off2=(abs((drop_off2_x-Ox))+abs((drop_off2_y-Oy)))
+        if distance_drop_off<distance_drop_off2:
+            nearest_drop_off=distance_drop_off
+        else:
+            nearest_drop_off=distance_drop_off2
+        
         DO_coordinate_list=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
         nearest_drop_off=math.inf
         for DO in DO_coordinate_list:
@@ -145,12 +157,21 @@ class Agent(BaseAgent,Game):
         nb_wagons=len(self.all_trains[self.nickname]['wagons'])
         if nb_wagons==0:
             distance_wagon=math.inf
+            self.wagondropoff=0
+
+        elif self.wagondropoff==1:
+            return self.optimum_droping_off(drop_off_x,drop_off_y)
 
         else:
+            distance_wagon=(nearest_drop_off/(nb_wagons+0.0000001))
+        
+        #should we go to the drop off zone or should we collect passengers
             distance_wagon=(nearest_drop_off*(0.95**nb_wagons))
         
         #should we go to the drop off zone or should we collect passengers
         if distance_wagon<previous_distance:
+            self.wagondropoff=1
+            return (drop_off_x,drop_off_y)
             return nearest_drop_coordinate
         else:
             return solution
@@ -172,7 +193,7 @@ class Agent(BaseAgent,Game):
         return False
         
     def dropping_off_2_coordinates(self, x1_coordinate, y1_coordinate):
-        """ finds the second coordinate of the drop off zone """
+        """ finds the second coordinate of the drop off zone 
         height,width=self.convert_grid((self.delivery_zone['height'],self.delivery_zone['width']))
         drop_off_zone=[tuple((x1_coordinate,y1_coordinate))]
         for y in range(1,(width+1)):
@@ -181,7 +202,12 @@ class Agent(BaseAgent,Game):
                 y2_coordinate=y1_coordinate+i
                 drop_off_zone.append(tuple((x2_coordinate,y2_coordinate)))
         return (drop_off_zone)
-
+        """
+        """ finds the second coordinate of the drop off zone """
+        height,width=self.convert_grid((self.delivery_zone['height'],self.delivery_zone['width']))
+        x2_coordinate=x1_coordinate+width-1
+        y2_coordinate=y1_coordinate+height-1
+        return (tuple(x2_coordinate, y2_coordinate))
     
     def convert_grid(self,object):
         """converts the object number into a single digit grid to use as coordinates"""
