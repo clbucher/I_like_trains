@@ -134,16 +134,17 @@ class Agent(BaseAgent,Game):
 
         #distance to the dropoff zone
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
-        (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates
+        (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
         distance_drop_off=(abs((drop_off_x-Ox))+abs((drop_off_y-Oy)))
         distance_drop_off2=(abs((drop_off2_x-Ox))+abs((drop_off2_y-Oy)))
         if distance_drop_off<distance_drop_off2:
             nearest_drop_off=distance_drop_off
         else:
             nearest_drop_off=distance_drop_off2
-        
+        """
         DO_coordinate_list=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
         nearest_drop_off=math.inf
+        
         for DO in DO_coordinate_list:
             if self.is_occupied(DO):
                 distance_drop_off=math.inf
@@ -153,26 +154,19 @@ class Agent(BaseAgent,Game):
             if distance_drop_off<nearest_drop_off:
                 nearest_drop_off=distance_drop_off
                 nearest_drop_coordinate=DO
-        
+        """
         nb_wagons=len(self.all_trains[self.nickname]['wagons'])
         if nb_wagons==0:
             distance_wagon=math.inf
-            self.wagondropoff=0
-
-        elif self.wagondropoff==1:
-            return self.optimum_droping_off(drop_off_x,drop_off_y)
 
         else:
-            distance_wagon=(nearest_drop_off/(nb_wagons+0.0000001))
         
         #should we go to the drop off zone or should we collect passengers
             distance_wagon=(nearest_drop_off*(0.95**nb_wagons))
         
         #should we go to the drop off zone or should we collect passengers
         if distance_wagon<previous_distance:
-            self.wagondropoff=1
-            return (drop_off_x,drop_off_y)
-            return nearest_drop_coordinate
+            return nearest_drop_off
         else:
             return solution
         
@@ -207,7 +201,7 @@ class Agent(BaseAgent,Game):
         height,width=self.convert_grid((self.delivery_zone['height'],self.delivery_zone['width']))
         x2_coordinate=x1_coordinate+width-1
         y2_coordinate=y1_coordinate+height-1
-        return (tuple(x2_coordinate, y2_coordinate))
+        return (x2_coordinate, y2_coordinate)
     
     def convert_grid(self,object):
         """converts the object number into a single digit grid to use as coordinates"""
@@ -242,7 +236,6 @@ class Agent(BaseAgent,Game):
         """
         We find a list of the coordonates of the best path to the passenger using the Dijkstra's Algorithm
         """
-        find_coordinate=tuple(find_coordinate)
         B=0
         (OP_x,OP_y)=your_coordinate
         (Ox,Oy)=self.convert_direction(self.all_trains[self.nickname]['direction'])
@@ -278,6 +271,7 @@ class Agent(BaseAgent,Game):
         positions=((0,1),(0,-1),(1,0),(-1,0))
         counter=-1
         E=0
+        print("before while")
         while E==0: #filling the grid
             counter+=1
             dict_pos[counter+1]=[]
@@ -303,7 +297,7 @@ class Agent(BaseAgent,Game):
                             dict_pos["inf"].remove(new_coordinate)
                 if E==1:
                     break
-
+        print("nach while")
         return(B,dict_pos, find_coordinate, path_index)
         
     def find_path_pack(self, B,dict_pos, find_coordinate,path_index):
