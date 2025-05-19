@@ -7,11 +7,6 @@ from server.game import Game
 import math
 from datetime import datetime
 
-#TODO(Elina) 
-#comment all of the code
-#trouver tout les case de drop_off_zone
-#evt. fonces vers le train avec le highscore
-
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
 class Agent(BaseAgent,Game):
@@ -24,28 +19,62 @@ class Agent(BaseAgent,Game):
 
         This method must return one of moves.MOVE
         """
-        #time_before=datetime.now()
+        time_before=datetime.now()
         #will change game width into a coordinate system which is divided by cell size
         self.convert_gamewith()
     
-
-        self.train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
-        x,y = self.train_coordinate
-        position_collect=self.what_to_collect()
-        
-        self.Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(self.train_coordinate, position_collect)
-        next_move = self.find_best_Path_directions(self.Dicth_onary)
+        train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
+        x,y = train_coordinate
+        position_collect=self.what_to_collect(x,y)
+        print(f'position to collect {position_collect}')
+        next_direction=self.find_next_move(x,y,position_collect)
+        next_move=self.convert_NM_coordinate(next_direction)
+        #self.Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(train_coordinate, position_collect)
+        #next_move = self.find_best_Path_directions(self.Dicth_onary)
         #if our next move still gets us into a situation we would die
-        if self.check_if_collision_train(next_move,x,y):
-           next_move=self.next_move_prevent_collision(next_move,x,y)
-        """
+        #if self.check_if_collision_train(next_move,x,y):
+        #   next_move=self.next_move_prevent_collision(next_move,x,y)
+        
         time_after=datetime.now()
         time_after2=datetime.timestamp(time_after)
         time_before2=datetime.timestamp(time_before)
         time_difference=time_after2-time_before2
-        print(f'difference {time_difference}, time after {time_after}, time before {time_before}')
-        """
+        #print(f'difference {time_difference}, time after {time_after}, time before {time_before}')
+        print(f'next, move and our current position {next_move, (x,y)}')
         return next_move
+    
+    def find_next_move(self,x,y,position_collect):
+        all_directions=[tuple((0,1)),tuple((0,-1)),tuple((1,0)),tuple((-1,0))]
+        our_direction=self.convert_direction(self.all_trains[self.nickname]['direction'])
+        ox,oy=our_direction
+        backposition=((ox*(-1)),(oy*(-1)))
+        all_directions.remove(backposition)
+        old_distance=math.inf
+        old_direction=(0,0)
+        old=[]
+        new=[]
+        #for x in range(3):
+        for i in range(3):
+            dx,dy=all_directions[i]
+            nx=dx+x
+            ny=dy+y
+            px,py=position_collect
+            print(f'{nx,ny} nx,ny')
+            if self.is_occupied(tuple((nx,ny))):
+                #all_directions.remove(tuple((dx,dy)))
+                continue
+            new_distance=(abs((nx-px))+abs((ny-py)))
+            new.append(new_distance)
+            if new_distance<old_distance:
+                old_distance=new_distance
+                old_direction=(dx,dy)
+                old.append(old_distance)
+        if old_direction==(0,0):
+            print(all_directions, old)
+            raise 'problem'
+        #print(f'dictinary of all the distances{new,old}')
+        return old_direction
+            
 
     def convert_next_move(self,next_move):
         """ 
@@ -58,7 +87,18 @@ class Agent(BaseAgent,Game):
             Move.LEFT:  (-1, 0)
             }
         dx, dy = self.move_to_delta[next_move]
-        return (dx,dy)
+        return tuple((dx,dy))
+        
+    def convert_NM_coordinate(self,coordinate):
+        """"""
+        self.move_to_delta = {
+            (0, -1): Move.UP,
+            (0, 1): Move.DOWN,
+            (1, 0): Move.RIGHT,
+            (-1, 0): Move.LEFT
+            }
+        next_move=self.move_to_delta[coordinate]
+        return next_move
     
     def check_if_collision_train(self,next_move,x,y):
         """ it will check if the next move would make us collide with another train or with the head of another train
@@ -110,7 +150,7 @@ class Agent(BaseAgent,Game):
             new_move = delta_to_move[(dx, dy)]
         return new_move
 
-    def what_to_collect(self):
+    def what_to_collect(self,Ox,Oy):
         """
         chooses what to collect next or if it goes to the drop off zone.
         """
@@ -121,27 +161,31 @@ class Agent(BaseAgent,Game):
             value=self.passengers[number]['value']
             position_passenger=self.convert_grid(self.passengers[number]['position'])
             (x,y)=position_passenger
-            (Ox,Oy)=self.train_coordinate
             #we have chosen this estimator as the complexity is O(n) for the number of positons apart
             distance_passenger=((abs((x-Ox)))+(abs((y-Oy)))/(value/2)) 
             if distance_passenger<previous_distance:
                 previous_distance=distance_passenger
                 solution=position_passenger
 
-        #distance to the dropoff zone
+        #distance of the dropoff zone
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
-        DO_coordinate_list=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
-        nearest_drop_off=math.inf
-        for DO in DO_coordinate_list:
-            if self.is_occupied(DO):
-                distance_drop_off=math.inf
-            else:
-                DO_x,DO_y=DO
-                distance_drop_off=(abs((DO_x-Ox))+abs((DO_y-Oy)))
-            if distance_drop_off<nearest_drop_off:
-                nearest_drop_off=distance_drop_off
-                nearest_drop_coordinate=DO
-        
+        (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
+        if self.is_occupied((drop_off_x,drop_off_y)):
+            distance_drop_off=math.inf
+        else:
+            distance_drop_off=(abs((drop_off_x-Ox))+abs((drop_off_y-Oy)))
+
+        if self.is_occupied((drop_off2_x, drop_off2_y)):
+            distance_drop_off2=math.inf
+        else:
+            distance_drop_off2=(abs((drop_off2_x-Ox))+abs((drop_off2_y-Oy)))
+
+        if distance_drop_off<distance_drop_off2:
+            nearest_drop_off=distance_drop_off
+            nearest_drop_coordinate=(drop_off_x,drop_off_y)
+        else:
+            nearest_drop_off=distance_drop_off2
+            nearest_drop_coordinate=(drop_off2_x, drop_off2_y)
         nb_wagons=len(self.all_trains[self.nickname]['wagons'])
         if nb_wagons==0:
             distance_wagon=math.inf
@@ -158,29 +202,43 @@ class Agent(BaseAgent,Game):
     def is_occupied(self, coordinate):
         """ 
         checks if a specific coordinate is already occupied, by a train or his wagons
+        #modifiziert
         """
         x,y = coordinate
+        occupied_list=[]
         for name in self.all_trains.keys():
             tx, ty = self.convert_grid(self.all_trains[name]["position"])
             tdx, tdy = self.convert_direction(self.all_trains[name]["direction"])
+            wagon_list=self.convert_list(self.all_trains[name]['wagons'])
+            occupied_list.append(tuple((tx,ty))) #the head of the train
+            for i in wagon_list:
+                occupied_list.append(i) #all the wagons
+            if name !=self.nickname:
+                occupied_list.append(tuple((tx+tdx,ty+tdy))) #right in front of the other trains
+        print(f'{occupied_list} occ. list')
+        if (x,y) in occupied_list:
+            return True
+        elif (x == self.WIDTH) or (x < 0) or (y == self.HEIGHT) or (y < 0):
+                return True
+        else:
+            return False
+        
+            """
             if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']):
                 return True
             elif x == self.WIDTH or x < 0 or y == self.HEIGHT or y < 0:
                 return True
             elif (tx+tdx, ty+tdy) == coordinate and name != self.nickname:
                 return True
-        return False
+            """
+
         
     def dropping_off_2_coordinates(self, x1_coordinate, y1_coordinate):
         """ finds the second coordinate of the drop off zone """
         height,width=self.convert_grid((self.delivery_zone['height'],self.delivery_zone['width']))
-        drop_off_zone=[tuple((x1_coordinate,y1_coordinate))]
-        for y in range(1,(width+1)):
-            for i in range(1,(height+1)):
-                x2_coordinate=x1_coordinate+y
-                y2_coordinate=y1_coordinate+i
-                drop_off_zone.append(tuple((x2_coordinate,y2_coordinate)))
-        return (drop_off_zone)
+        x2_coordinate=x1_coordinate+width-1
+        y2_coordinate=y1_coordinate+height-1
+        return (x2_coordinate, y2_coordinate)
 
     
     def convert_grid(self,object):
@@ -211,11 +269,11 @@ class Agent(BaseAgent,Game):
         for i in object:
             new_obj.append(self.convert_grid(i))
         return new_obj         
-
+    """
     def find_best_Path_coordonates(self,your_coordinate,find_coordinate):
-        """
+        " ""
         We find a list of the coordonates of the best path to the passenger using the Dijkstra's Algorithm
-        """
+        " ""
         find_coordinate=tuple(find_coordinate)
         B=0
         (OP_x,OP_y)=your_coordinate
@@ -242,13 +300,13 @@ class Agent(BaseAgent,Game):
         return (path,B)
 
     def flood_grid(self, dict_pos, find_coordinate):
-        """
+        " ""
         This function floods our grid with the distance to our curent position, until we arrive 
         to our end destination. 
         Input: dictionary with the positional values, coordinate we want to go to
         Output: distance value to our final coordinate, updated dictonary with all the correct values,
                 find coordinate, 
-        """
+        " ""
         positions=((0,1),(0,-1),(1,0),(-1,0))
         counter=-1
         E=0
@@ -281,10 +339,10 @@ class Agent(BaseAgent,Game):
         return(B,dict_pos, find_coordinate, path_index)
         
     def find_path_pack(self, B,dict_pos, find_coordinate,path_index):
-        """ 
+        " "" 
         We go through our flooded grid and find the shortest path pack to the initial position.
         return: a list of coordinate
-        """
+        " ""
         positions=((0,1),(0,-1),(1,0),(-1,0))
         path=[]
         counter=B
@@ -307,7 +365,7 @@ class Agent(BaseAgent,Game):
                     break
 
     def find_best_Path_directions(self, path):
-        """this translates the list of the best path into movements we have to do next"""
+        " ""this translates the list of the best path into movements we have to do next" ""
         (x,y)=self.convert_grid(self.all_trains[self.nickname]["position"])
         (x1, y1) = path[0]
         Nx=(x1-x)
@@ -321,3 +379,4 @@ class Agent(BaseAgent,Game):
                 return Move.UP
             case(0,1):
                 return Move.DOWN
+    """
