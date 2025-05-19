@@ -19,28 +19,18 @@ class Agent(BaseAgent,Game):
 
         This method must return one of moves.MOVE
         """
-        time_before=datetime.now()
         #will change game width into a coordinate system which is divided by cell size
         self.convert_gamewith()
     
         train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = train_coordinate
         position_collect=self.what_to_collect(x,y)
-        print(f'position to collect {position_collect}')
+        #print(f'position to collect {position_collect}')
         next_direction=self.find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)
-        #self.Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(train_coordinate, position_collect)
-        #next_move = self.find_best_Path_directions(self.Dicth_onary)
-        #if our next move still gets us into a situation we would die
-        #if self.check_if_collision_train(next_move,x,y):
-        #   next_move=self.next_move_prevent_collision(next_move,x,y)
-        
-        time_after=datetime.now()
-        time_after2=datetime.timestamp(time_after)
-        time_before2=datetime.timestamp(time_before)
-        time_difference=time_after2-time_before2
+
         #print(f'difference {time_difference}, time after {time_after}, time before {time_before}')
-        print(f'next, move and our current position {next_move, (x,y)}')
+        #print(f'next, move and our current position {next_move, (x,y)}')
         return next_move
     
     def find_next_move(self,x,y,position_collect):
@@ -59,7 +49,7 @@ class Agent(BaseAgent,Game):
             nx=dx+x
             ny=dy+y
             px,py=position_collect
-            print(f'{nx,ny} nx,ny')
+            #print(f'{nx,ny} nx,ny')
             if self.is_occupied(tuple((nx,ny))):
                 #all_directions.remove(tuple((dx,dy)))
                 continue
@@ -70,7 +60,7 @@ class Agent(BaseAgent,Game):
                 old_direction=(dx,dy)
                 old.append(old_distance)
         if old_direction==(0,0):
-            print(all_directions, old)
+            #print(all_directions, old)
             raise 'problem'
         #print(f'dictinary of all the distances{new,old}')
         return old_direction
@@ -99,56 +89,6 @@ class Agent(BaseAgent,Game):
             }
         next_move=self.move_to_delta[coordinate]
         return next_move
-    
-    def check_if_collision_train(self,next_move,x,y):
-        """ it will check if the next move would make us collide with another train or with the head of another train
-        - return: True if we will collide with our next move
-        """
-        dx,dy=self.convert_next_move(next_move)
-        target_pos = (x + dx, y + dy)
-
-        this_train = False
-        if self.is_occupied(target_pos): #checking to see if the next move will drive us into anything
-            for name, train in self.all_trains.items():
-                train_pos = self.convert_grid(train["position"])
-                tail_pos = self.convert_grid(train["wagons"][-1]) if train["wagons"] else None
-                tx, ty = self.convert_grid(train["position"])
-                tdx, tdy = self.convert_direction(train["direction"])
-                #if it is the "head" of a train the we have to check if this train is faster or not to avoid a collision
-                if target_pos == train_pos: 
-                    #if len(train["wagons"]) <= len(self.all_trains[self.nickname]["wagons"]):
-                    tx1, ty1 = self.convert_direction(train["direction"])
-                    tx2, ty2 = self.convert_direction(self.all_trains[self.nickname]["direction"])
-                    #if (-tx1, -ty1) != (tx2, ty2) and len(train["wagons"])== 0: 
-                            #checking to see if it will be a head on collison
-                    #        break
-                    this_train = True
-                elif target_pos == tail_pos or target_pos in self.convert_list(train["wagons"]):
-                    #if it is a wagon in the middle of the train we cannnot take this path
-                    this_train = True
-                elif (tx+tdx, ty +tdy) == target_pos and name != self.nickname:
-                    this_train = True
-        return(this_train)
-                
-    def next_move_prevent_collision(self,next_move,x,y):
-        """ 
-        this will tell us what move we have to do, as to not collide with another train on time
-        """
-        next_move=next_move
-        dx, dy = self.convert_next_move(next_move)
-        fallback_moves = [[0,1], [0,-1], [1,0], [-1,0]]
-        if [dx, dy] in fallback_moves:
-            fallback_moves.remove([dx, dy])  # remove current blocked direction
-        back_dir = [-i for i in self.convert_direction(self.all_trains[self.nickname]["direction"])]
-        if back_dir in fallback_moves:
-            fallback_moves.remove(back_dir)  # don't go backward
-        # Remove fallback moves that are also occupied
-        fallback_moves = [m for m in fallback_moves if not self.is_occupied((x + m[0], y + m[1]))]
-        if fallback_moves:
-            dx, dy = random.choice(fallback_moves)
-            delta_to_move = {(1,0): Move.RIGHT, (-1,0): Move.LEFT, (0,1): Move.DOWN, (0,-1): Move.UP}
-            new_move = delta_to_move[(dx, dy)]
-        return new_move
 
     def what_to_collect(self,Ox,Oy):
         """
@@ -191,7 +131,7 @@ class Agent(BaseAgent,Game):
             distance_wagon=math.inf
 
         else:
-            distance_wagon=(nearest_drop_off*(0.95**(nb_wagons*2)))
+            distance_wagon=(nearest_drop_off*(0.95**nb_wagons))
         
         #should we go to the drop off zone or should we collect passengers
         if distance_wagon<previous_distance:
@@ -213,9 +153,10 @@ class Agent(BaseAgent,Game):
             occupied_list.append(tuple((tx,ty))) #the head of the train
             for i in wagon_list:
                 occupied_list.append(i) #all the wagons
-            if name !=self.nickname:
+            if name != self.nickname:
                 occupied_list.append(tuple((tx+tdx,ty+tdy))) #right in front of the other trains
-        print(f'{occupied_list} occ. list')
+        #
+        # print(f'{occupied_list} occ. list')
         if (x,y) in occupied_list:
             return True
         elif (x == self.WIDTH) or (x < 0) or (y == self.HEIGHT) or (y < 0):
@@ -223,23 +164,12 @@ class Agent(BaseAgent,Game):
         else:
             return False
         
-            """
-            if coordinate == self.convert_grid(self.all_trains[name]['position']) or coordinate in self.convert_list(self.all_trains[name]['wagons']):
-                return True
-            elif x == self.WIDTH or x < 0 or y == self.HEIGHT or y < 0:
-                return True
-            elif (tx+tdx, ty+tdy) == coordinate and name != self.nickname:
-                return True
-            """
-
-        
     def dropping_off_2_coordinates(self, x1_coordinate, y1_coordinate):
         """ finds the second coordinate of the drop off zone """
         height,width=self.convert_grid((self.delivery_zone['height'],self.delivery_zone['width']))
         x2_coordinate=x1_coordinate+width-1
         y2_coordinate=y1_coordinate+height-1
         return (x2_coordinate, y2_coordinate)
-
     
     def convert_grid(self,object):
         """converts the object number into a single digit grid to use as coordinates"""
@@ -268,115 +198,4 @@ class Agent(BaseAgent,Game):
             return new_obj
         for i in object:
             new_obj.append(self.convert_grid(i))
-        return new_obj         
-    """
-    def find_best_Path_coordonates(self,your_coordinate,find_coordinate):
-        " ""
-        We find a list of the coordonates of the best path to the passenger using the Dijkstra's Algorithm
-        " ""
-        find_coordinate=tuple(find_coordinate)
-        B=0
-        (OP_x,OP_y)=your_coordinate
-        (Ox,Oy)=self.convert_direction(self.all_trains[self.nickname]['direction'])
-        backpositon=tuple(((OP_x-Ox),(OP_y-Oy))) # going packwards is not possible and seen as an obstacle
-        dict_pos={}
-        dict_pos[0]=[(OP_x,OP_y)]
-        dict_pos["inf"] = []
-        dict_pos["B"]=[]
-        dict_pos["-"]=[]
-        for i in range(self.WIDTH):
-            for j in range(self.HEIGHT):
-                coordinate=tuple((i,j))
-                for name in self.all_trains.keys():
-                    if (coordinate == self.convert_grid(self.all_trains[name]['position'])) or (coordinate in self.convert_list(self.all_trains[name]['wagons'])) or (coordinate == backpositon):
-                        dict_pos["-"].append(coordinate)                      
-                    else:
-                        dict_pos["inf"].append((i,j))
-                if coordinate == find_coordinate: #find the spesific input of our function
-                    dict_pos["B"].append(coordinate)
-        
-        B,dict_pos, find_coordinate,path_index=self.flood_grid(dict_pos, find_coordinate)
-        path,B=self.find_path_pack(B,dict_pos, find_coordinate,path_index)
-        return (path,B)
-
-    def flood_grid(self, dict_pos, find_coordinate):
-        " ""
-        This function floods our grid with the distance to our curent position, until we arrive 
-        to our end destination. 
-        Input: dictionary with the positional values, coordinate we want to go to
-        Output: distance value to our final coordinate, updated dictonary with all the correct values,
-                find coordinate, 
-        " ""
-        positions=((0,1),(0,-1),(1,0),(-1,0))
-        counter=-1
-        E=0
-        while E==0: #filling the grid
-            counter+=1
-            dict_pos[counter+1]=[]
-            for pt in dict_pos[counter]:
-                for h in positions:
-                    old_value=counter
-                    index_x,index_y=pt
-                    nx,ny=h
-                    new_coordinate=tuple((index_x+nx, index_y+ny))
-                    # check if we are out of bound
-                    if self.HEIGHT==(index_y+ny) or self.WIDTH<(index_x+nx) or (index_y+ny)<0 or (index_x+nx)<0:
-                        continue
-                    if new_coordinate in dict_pos["inf"] or new_coordinate in dict_pos["B"]:
-                        new_value=(old_value+1)
-                        if new_coordinate == find_coordinate:
-                            E=1
-                            B=new_value
-                            path_index=new_coordinate
-                            break
-                        dict_pos[new_value].append(new_coordinate)
-                        #update all the values to be on the newest stand
-                        if new_coordinate in dict_pos["inf"]:
-                            dict_pos["inf"].remove(new_coordinate)
-                if E==1:
-                    break
-
-        return(B,dict_pos, find_coordinate, path_index)
-        
-    def find_path_pack(self, B,dict_pos, find_coordinate,path_index):
-        " "" 
-        We go through our flooded grid and find the shortest path pack to the initial position.
-        return: a list of coordinate
-        " ""
-        positions=((0,1),(0,-1),(1,0),(-1,0))
-        path=[]
-        counter=B
-        dict_pos["H"]=[]
-        for E in range(B):
-            counter-=1
-            for pt in positions:
-                pt_x,pt_y=path_index
-                nx,ny=pt
-                searching_pt=(pt_x+nx,pt_y+ny)
-                if counter==0:
-                    path.reverse()
-                    path.append(find_coordinate)
-                    return (path,B)
-                elif searching_pt in dict_pos[(counter)]:
-                    path.append(searching_pt)
-                    path_index=searching_pt
-                    dict_pos["H"].append((pt_y+ny, pt_x+nx))
-                    dict_pos[counter].remove((pt_x+nx, pt_y+ny))
-                    break
-
-    def find_best_Path_directions(self, path):
-        " ""this translates the list of the best path into movements we have to do next" ""
-        (x,y)=self.convert_grid(self.all_trains[self.nickname]["position"])
-        (x1, y1) = path[0]
-        Nx=(x1-x)
-        Ny=(y1-y)
-        match (Nx,Ny):
-            case (1,0):
-                return Move.RIGHT
-            case(-1,0):
-                return Move.LEFT
-            case(0,-1):
-                return Move.UP
-            case(0,1):
-                return Move.DOWN
-    """
+        return new_obj

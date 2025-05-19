@@ -26,7 +26,7 @@ class Agent(BaseAgent,Game):
         train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = train_coordinate
         position_collect=self.what_to_collect(x,y)
-        print(f'position to collect {position_collect}')
+        #print(f'position to collect {position_collect}')
         next_direction=self.find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)
         #self.Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(train_coordinate, position_collect)
@@ -40,7 +40,7 @@ class Agent(BaseAgent,Game):
         time_before2=datetime.timestamp(time_before)
         time_difference=time_after2-time_before2
         #print(f'difference {time_difference}, time after {time_after}, time before {time_before}')
-        print(f'next, move and our current position {next_move, (x,y)}')
+        #print(f'next, move and our current position {next_move, (x,y)}')
         return next_move
     
     def find_next_move(self,x,y,position_collect):
@@ -59,7 +59,7 @@ class Agent(BaseAgent,Game):
             nx=dx+x
             ny=dy+y
             px,py=position_collect
-            print(f'{nx,ny} nx,ny')
+            #print(f'{nx,ny} nx,ny')
             if self.is_occupied(tuple((nx,ny))):
                 #all_directions.remove(tuple((dx,dy)))
                 continue
@@ -70,7 +70,7 @@ class Agent(BaseAgent,Game):
                 old_direction=(dx,dy)
                 old.append(old_distance)
         if old_direction==(0,0):
-            print(all_directions, old)
+            #print(all_directions, old)
             raise 'problem'
         #print(f'dictinary of all the distances{new,old}')
         return old_direction
@@ -213,9 +213,10 @@ class Agent(BaseAgent,Game):
             occupied_list.append(tuple((tx,ty))) #the head of the train
             for i in wagon_list:
                 occupied_list.append(i) #all the wagons
-            if name !=self.nickname:
+            if name != self.nickname: #around the head
                 occupied_list.append(tuple((tx+tdx,ty+tdy))) #right in front of the other trains
-        print(f'{occupied_list} occ. list')
+        #
+        # print(f'{occupied_list} occ. list')
         if (x,y) in occupied_list:
             return True
         elif (x == self.WIDTH) or (x < 0) or (y == self.HEIGHT) or (y < 0):

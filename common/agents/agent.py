@@ -167,7 +167,7 @@ class Agent(BaseAgent,Game):
                 return True
             elif x == self.WIDTH or x < 0 or y == self.HEIGHT or y < 0:
                 return True
-            elif (tx+tdx, ty+tdy) == coordinate and name != self.nickname:
+            elif ((tx+tdx, ty+tdy) == coordinate) and (name != self.nickname):
                 return True
         return False
         
