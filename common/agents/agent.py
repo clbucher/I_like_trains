@@ -5,7 +5,7 @@ from common.base_agent import BaseAgent
 from common.move import Move
 from server.game import Game
 import math
-from datetime import datetime
+import datetime
 
 #TODO(Elina) 
 #comment all of the code
