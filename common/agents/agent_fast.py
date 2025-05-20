@@ -26,20 +26,25 @@ class Agent(BaseAgent,Game):
 
         train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = train_coordinate
+        (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
+        (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
         for name in self.all_trains.keys():
                     if name != self.nickname:
                         othername=name
-        if len(self.all_trains)==2: #killing other train
-            if self.we_are_best() and self.we_not_on_bestrun():
-                difference_score=self.best_scores[self.nickname]-self.all_trains[othername]['score']
-                if (difference_score>10):
-                    next_move=self.kill_other(x,y,othername)
-                    return next_move
+        match len(self.all_trains):
+            case 2: #killing other train
+                if self.we_are_best() and self.we_not_on_bestrun():
+                    difference_score=self.best_scores[self.nickname]-self.all_trains[othername]['score']
+                    if (difference_score>10):
+                        next_move=self.kill_other(x,y,othername)
+                        return next_move
                 
-        elif len(self.all_trains)==3: #killing method around dropoff
-            if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>20:
-                    next_move=self.circle_dropoff(x,y)
-                    return next_move
+            case 3: #killing method around dropoff
+                if drop_off_x and drop_off_y and drop_off2_x and drop_off2_y:
+                    if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>20:
+                        next_move=self.circle_dropoff(x,y)
+                        return next_move
+
         position_collect=self.what_to_collect(x,y)
         next_direction=self.find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)
@@ -48,13 +53,13 @@ class Agent(BaseAgent,Game):
     def kill_other(self,x,y,othername):
         """ """
         position_collect=self.convert_grid(self.all_trains[othername]['position'])
-        next_direction=self.find_next_move_kill(x,y,position_collect)
+        next_direction=self.kill_find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)  
         return next_move
     
     def circle_dropoff(self,x,y):
         distance_wagon,position_collect=self.nearest_dropoff(x,y)
-        next_direction=self.find_next_move_kill(x,y,position_collect)
+        next_direction=self.kill_find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)  
         return next_move
         
@@ -78,7 +83,7 @@ class Agent(BaseAgent,Game):
         else:
             return False
         
-    def find_next_move_kill(self,x,y,position_collect):
+    def kill_find_next_move(self,x,y,position_collect):
         all_directions=[tuple((0,1)),tuple((0,-1)),tuple((1,0)),tuple((-1,0))]
         our_direction=self.convert_direction(self.all_trains[self.nickname]['direction'])
         ox,oy=our_direction
@@ -93,22 +98,17 @@ class Agent(BaseAgent,Game):
             nx=dx+x
             ny=dy+y
             px,py=position_collect
-            #print(f'{nx,ny} nx,ny')
             new_distance_x=abs((nx-px))
             new_distance_y=abs((ny-py))
             distance_x=abs((x-px))
             distance_y=abs((y-py))
             distance=distance_x+distance_y
             new_distance=new_distance_x+new_distance_y
-            #print(f'{new_distance_x,new_distance_y} distance {distance}')
             if distance<new_distance and (new_distance_x==0 or new_distance_y==0):
                 continue
-            #new.append(new_distance)
             if new_distance<=old_distance:
                 old_distance=new_distance
                 old_direction=(dx,dy)
-                #old.append(old_distance)
-        #print(f'dictinary of all the distances{new,old}')
         return old_direction
         
     def find_next_move(self,x,y,position_collect):
