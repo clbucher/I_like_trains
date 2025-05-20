@@ -5,7 +5,6 @@ from common.base_agent import BaseAgent
 from common.move import Move
 from server.game import Game
 import math
-from datetime import datetime
 
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
@@ -19,28 +18,14 @@ class Agent(BaseAgent,Game):
 
         This method must return one of moves.MOVE
         """
-        time_before=datetime.now()
         #will change game width into a coordinate system which is divided by cell size
         self.convert_gamewith()
     
         train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = train_coordinate
         position_collect=self.what_to_collect(x,y)
-        #print(f'position to collect {position_collect}')
         next_direction=self.find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)
-        #self.Dicth_onary,path_length_passenger=self.find_best_Path_coordonates(train_coordinate, position_collect)
-        #next_move = self.find_best_Path_directions(self.Dicth_onary)
-        #if our next move still gets us into a situation we would die
-        #if self.check_if_collision_train(next_move,x,y):
-        #   next_move=self.next_move_prevent_collision(next_move,x,y)
-        
-        time_after=datetime.now()
-        time_after2=datetime.timestamp(time_after)
-        time_before2=datetime.timestamp(time_before)
-        time_difference=time_after2-time_before2
-        #print(f'difference {time_difference}, time after {time_after}, time before {time_before}')
-        #print(f'next, move and our current position {next_move, (x,y)}')
         return next_move
     
     def find_next_move(self,x,y,position_collect):
@@ -50,7 +35,7 @@ class Agent(BaseAgent,Game):
         backposition=((ox*(-1)),(oy*(-1)))
         all_directions.remove(backposition)
         old_distance=math.inf
-        old_direction=(0,0)
+        old_direction=our_direction
         old=[]
         new=[]
         #for x in range(3):
@@ -60,8 +45,7 @@ class Agent(BaseAgent,Game):
             ny=dy+y
             px,py=position_collect
             #print(f'{nx,ny} nx,ny')
-            if self.is_occupied(tuple((nx,ny))):
-                #all_directions.remove(tuple((dx,dy)))
+            if self.is_occupied(tuple((nx,ny))) or self.is_beside_train(tuple((nx,ny))):
                 continue
             new_distance=(abs((nx-px))+abs((ny-py)))
             new.append(new_distance)
@@ -69,9 +53,6 @@ class Agent(BaseAgent,Game):
                 old_distance=new_distance
                 old_direction=(dx,dy)
                 old.append(old_distance)
-        if old_direction==(0,0):
-            #print(all_directions, old)
-            raise 'problem'
         #print(f'dictinary of all the distances{new,old}')
         return old_direction
             
@@ -198,7 +179,20 @@ class Agent(BaseAgent,Game):
             return nearest_drop_coordinate
         else:
             return solution
-        
+    def is_beside_train(self,coordinate):
+        occupied_list=[]
+        for name in self.all_trains.keys():
+            if self.all_trains[name]['alive']:
+                if name != self.nickname: #around the head
+                    tx, ty = self.convert_grid(self.all_trains[name]["position"])
+                    occupied_list.append(tuple((tx+1,ty)))
+                    occupied_list.append(tuple((tx,tx+1)))
+                    occupied_list.append(tuple((tx-1,ty)))
+                    occupied_list.append(tuple((tx,ty-1)))
+        if coordinate in occupied_list:
+            return True
+        return False
+            
     def is_occupied(self, coordinate):
         """ 
         checks if a specific coordinate is already occupied, by a train or his wagons
@@ -207,16 +201,14 @@ class Agent(BaseAgent,Game):
         x,y = coordinate
         occupied_list=[]
         for name in self.all_trains.keys():
-            tx, ty = self.convert_grid(self.all_trains[name]["position"])
-            tdx, tdy = self.convert_direction(self.all_trains[name]["direction"])
-            wagon_list=self.convert_list(self.all_trains[name]['wagons'])
-            occupied_list.append(tuple((tx,ty))) #the head of the train
-            for i in wagon_list:
-                occupied_list.append(i) #all the wagons
-            if name != self.nickname: #around the head
-                occupied_list.append(tuple((tx+tdx,ty+tdy))) #right in front of the other trains
-        #
-        # print(f'{occupied_list} occ. list')
+            if self.all_trains[name]['alive']:
+                tx, ty = self.convert_grid(self.all_trains[name]["position"])
+                wagon_list=self.convert_list(self.all_trains[name]['wagons'])
+                occupied_list.append(tuple((tx,ty))) #the head of the train
+                for i in wagon_list:
+                    occupied_list.append(i) #all the wagons
+        
+        print(f'{occupied_list} occ. list')
         if (x,y) in occupied_list:
             return True
         elif (x == self.WIDTH) or (x < 0) or (y == self.HEIGHT) or (y < 0):
