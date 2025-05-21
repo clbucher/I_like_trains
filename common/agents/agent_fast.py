@@ -7,7 +7,7 @@ from server.game import Game
 import math
 
 #readme
-#kill other (we mir sterbe u er am bestscore isch)
+#score endern
 
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
@@ -51,19 +51,21 @@ class Agent(BaseAgent,Game):
         return next_move
     
     def kill_other(self,x,y,othername):
-        """ """
+        """ is called when we should go kill the other train. """
         position_collect=self.convert_grid(self.all_trains[othername]['position'])
         next_direction=self.kill_find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)  
         return next_move
     
     def circle_dropoff(self,x,y):
+        """ is called when we want to make it hard for the others to go dropoff their wagons. """
         distance_wagon,position_collect=self.nearest_dropoff(x,y)
         next_direction=self.kill_find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)  
         return next_move
         
     def we_are_best(self):
+        """ checks if we are the ones leading the highscore. """
         if self.best_scores=={}:
             return False
         if self.nickname not in self.best_scores.keys():
@@ -78,12 +80,14 @@ class Agent(BaseAgent,Game):
             return False
 
     def we_not_on_bestrun(self):
+        """ checks if our momentaraly run is not changing our highscore. """
         if self.all_trains[self.nickname]['score'] < (self.best_scores[self.nickname]-1):
             return True
         else:
             return False
         
     def kill_find_next_move(self,x,y,position_collect):
+        """ finds the best next move, ignoring if we drive into something killing us. """
         all_directions=[tuple((0,1)),tuple((0,-1)),tuple((1,0)),tuple((-1,0))]
         our_direction=self.convert_direction(self.all_trains[self.nickname]['direction'])
         ox,oy=our_direction
@@ -91,8 +95,6 @@ class Agent(BaseAgent,Game):
         all_directions.remove(backposition)
         old_distance=math.inf
         old_direction=our_direction
-        old=[]
-        new=[]
         for i in range(3):
             dx,dy=all_directions[i]
             nx=dx+x
@@ -112,6 +114,7 @@ class Agent(BaseAgent,Game):
         return old_direction
         
     def find_next_move(self,x,y,position_collect):
+        """ finds the best next move, making us closer to our end goal"""
         all_directions=[tuple((0,1)),tuple((0,-1)),tuple((1,0)),tuple((-1,0))]
         our_direction=self.convert_direction(self.all_trains[self.nickname]['direction'])
         ox,oy=our_direction
@@ -119,14 +122,11 @@ class Agent(BaseAgent,Game):
         all_directions.remove(backposition)
         old_distance=math.inf
         old_direction=our_direction
-        old=[]
-        new=[]
         for i in range(3):
             dx,dy=all_directions[i]
             nx=dx+x
             ny=dy+y
             px,py=position_collect
-            #print(f'{nx,ny} nx,ny')
             if self.is_occupied(tuple((nx,ny))) or self.is_beside_train(tuple((nx,ny))):
                 continue
             new_distance_x=abs((nx-px))
@@ -135,15 +135,11 @@ class Agent(BaseAgent,Game):
             distance_y=abs((y-py))
             distance=distance_x+distance_y
             new_distance=new_distance_x+new_distance_y
-            #print(f'{new_distance_x,new_distance_y} distance {distance}')
             if distance<new_distance and (new_distance_x==0 or new_distance_y==0):
                 continue
-            #new.append(new_distance)
             if new_distance<=old_distance:
                 old_distance=new_distance
                 old_direction=(dx,dy)
-                #old.append(old_distance)
-        #print(f'dictinary of all the distances{new,old}')
         return old_direction
             
 
@@ -161,7 +157,7 @@ class Agent(BaseAgent,Game):
         return tuple((dx,dy))
         
     def convert_NM_coordinate(self,coordinate):
-        """"""
+        """converts directional coordinate into a move"""
         self.move_to_delta = {
             (0, -1): Move.UP,
             (0, 1): Move.DOWN,
@@ -172,6 +168,7 @@ class Agent(BaseAgent,Game):
         return next_move
 
     def nearest_passenger(self,Ox,Oy):
+        """ chooses which passenger is the best to collect"""
         previous_distance=math.inf
         for number in range(len(self.passengers)):
             value=self.passengers[number]['value']
@@ -185,9 +182,11 @@ class Agent(BaseAgent,Game):
         return solution,previous_distance
     
     def nearest_dropoff(self,Ox,Oy):
+        """chooses which dropoff point is the closest to go to."""
         #distance of the dropoff zone
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
         (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
+
         if self.is_occupied((drop_off_x,drop_off_y)):
             distance_drop_off=math.inf
         else:
@@ -204,13 +203,12 @@ class Agent(BaseAgent,Game):
         else:
             nearest_drop_off=distance_drop_off2
             nearest_drop_coordinate=(drop_off2_x, drop_off2_y)
+        # creates comparisson fraction    
         nb_wagons=len(self.all_trains[self.nickname]['wagons'])
         if nb_wagons==0:
             distance_wagon=math.inf
-
         else:
             distance_wagon=(nearest_drop_off*(0.95**nb_wagons))
-
         return distance_wagon,nearest_drop_coordinate
 
     def what_to_collect(self,Ox,Oy):
@@ -227,6 +225,7 @@ class Agent(BaseAgent,Game):
             return solution
         
     def is_beside_train(self,coordinate):
+        """checks if a spesific coordinate is right next to the head of another train."""
         occupied_list=[]
         for name in self.all_trains.keys():
             if self.all_trains[name]['alive']:
@@ -255,7 +254,6 @@ class Agent(BaseAgent,Game):
                 for i in wagon_list:
                     occupied_list.append(i) #all the wagons
         
-        #print(f'{occupied_list} occ. list')
         if (x,y) in occupied_list:
             return True
         elif (x == self.WIDTH) or (x < 0) or (y == self.HEIGHT) or (y < 0):
