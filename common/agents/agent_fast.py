@@ -7,7 +7,6 @@ from server.game import Game
 import math
 
 #readme
-#score endern
 
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
@@ -33,15 +32,15 @@ class Agent(BaseAgent,Game):
                         othername=name
         match len(self.all_trains):
             case 2: #killing other train
-                if self.we_are_best() and self.we_not_on_bestrun():
+                if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>50:
                     difference_score=self.best_scores[self.nickname]-self.all_trains[othername]['score']
-                    if (difference_score>10):
+                    if (difference_score>30):
                         next_move=self.kill_other(x,y,othername)
                         return next_move
                 
             case 3: #killing method around dropoff
                 if drop_off_x and drop_off_y and drop_off2_x and drop_off2_y:
-                    if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>20:
+                    if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>60:
                         next_move=self.circle_dropoff(x,y)
                         return next_move
 
