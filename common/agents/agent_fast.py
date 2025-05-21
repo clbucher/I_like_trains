@@ -7,6 +7,8 @@ from server.game import Game
 import math
 
 #readme
+#comment code
+#skypernmb
 
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["112233", "445566"]
