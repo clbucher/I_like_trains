@@ -169,7 +169,8 @@ class Agent(BaseAgent,Game):
         return next_move
 
     def nearest_passenger(self,Ox,Oy):
-        """ chooses which passenger is the best to collect"""
+        """ finds the smalest passenger_value fraction to compare which passenger should get collected. 
+        returns the passenger_value fraction and the position of the passenger with the smallest one."""
         previous_distance=math.inf
         for number in range(len(self.passengers)):
             value=self.passengers[number]['value']
@@ -183,21 +184,23 @@ class Agent(BaseAgent,Game):
         return solution,previous_distance
     
     def nearest_dropoff(self,Ox,Oy):
-        """chooses which dropoff point is the closest to go to."""
+        """considers the two extreme points of the dropoff zone, to find which one is closer to us.
+        returns our comparison fraction, which we will use to compare with the passenger distance_value fraction
+        and the coordinate of the closest drop-off expreme point."""
         #distance of the dropoff zone
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
         (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
-
+        #if the dropoff is occupied, mark it as infinite
         if self.is_occupied((drop_off_x,drop_off_y)):
             distance_drop_off=math.inf
         else:
             distance_drop_off=(abs((drop_off_x-Ox))+abs((drop_off_y-Oy)))
-
+        #if the dropoff is occupied, mark it as infinite
         if self.is_occupied((drop_off2_x, drop_off2_y)):
             distance_drop_off2=math.inf
         else:
             distance_drop_off2=(abs((drop_off2_x-Ox))+abs((drop_off2_y-Oy)))
-
+        #compare the distance of the drop-off points
         if distance_drop_off<distance_drop_off2:
             nearest_drop_off=distance_drop_off
             nearest_drop_coordinate=(drop_off_x,drop_off_y)
@@ -214,7 +217,11 @@ class Agent(BaseAgent,Game):
 
     def what_to_collect(self,Ox,Oy):
         """
-        chooses what to collect next or if it goes to the drop off zone.
+        compares the two comparisson fractions. 
+        the distance to the drop-off zone (DDO) fraction: DDO*(0.95**numberWagons)
+        and the passenger distance_value fraction: distance/(value/2).
+        The lowest fraction of both will be the coordinate we return out of the function, 
+        since this is the next coordinate to go to.
         """
         solution,previous_distance=self.nearest_passenger(Ox,Oy)
         distance_wagon,nearest_drop_coordinate=self.nearest_dropoff(Ox,Oy)
@@ -226,7 +233,8 @@ class Agent(BaseAgent,Game):
             return solution
         
     def is_beside_train(self,coordinate):
-        """checks if a spesific coordinate is right next to the head of another train."""
+        """checks if a spesific coordinate is right next to the head of another train. 
+        The direction to the right, to the left, up and down."""
         occupied_list=[]
         for name in self.all_trains.keys():
             if self.all_trains[name]['alive']:
