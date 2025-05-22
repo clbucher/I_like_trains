@@ -11,16 +11,12 @@ import math
 #skypernmb
 
 # Student scipers, will be automatically used to evaluate your code
-SCIPERS = ["112233", "445566"]
+SCIPERS = ["391884", "398510"]
 class Agent(BaseAgent,Game):
     def get_move(self):
         """
         Called regularly called to get the next move for your train. Implement
-        an algorithm to control your train here. You will be handing in this file.
-
-        For now, the code simply picks a random direction between UP, DOWN, LEFT, RIGHT
-
-        This method must return one of moves.MOVE
+        an algorithm to control your train here
         """
         #will change game width into a coordinate system which is divided by cell size
         self.convert_gamewith()
@@ -52,21 +48,35 @@ class Agent(BaseAgent,Game):
         return next_move
     
     def kill_other(self,x,y,othername):
-        """ is called when we should go kill the other train. """
+        """ 
+        Is called when we should go kill the other train. 
+        x, y is our trains position
+        othername is the nickname of the train we are trying to kill. Cannot be our own name
+        Returns the next move we have in order to kill someone
+        """
         position_collect=self.convert_grid(self.all_trains[othername]['position'])
         next_direction=self.kill_find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)  
         return next_move
     
     def circle_dropoff(self,x,y):
-        """ is called when we want to make it hard for the others to go dropoff their wagons. """
+        """ 
+        Is called when we want to make it hard for the others to go dropoff their wagons. 
+        x, y is our trains position
+        Returns the next move we have to make in order to get to the nearest drop-off zone (Doesn't see a field if we are currently occupying it) 
+        """
         distance_wagon,position_collect=self.nearest_dropoff(x,y)
         next_direction=self.kill_find_next_move(x,y,position_collect)
         next_move=self.convert_NM_coordinate(next_direction)  
         return next_move
         
     def we_are_best(self):
-        """ checks if we are the ones leading the highscore. """
+        """ 
+        Checks if we are the ones leading the highscore.
+        We only want to go kill other trains if we are currently the best and want to
+        avoid other trains catching up to us. 
+        Returns True or False
+        """
         if self.best_scores=={}:
             return False
         if self.nickname not in self.best_scores.keys():
@@ -81,14 +91,23 @@ class Agent(BaseAgent,Game):
             return False
 
     def we_not_on_bestrun(self):
-        """ checks if our momentaraly run is not changing our highscore. """
+        """ 
+        Checks if our momentaraly run is not changing our highscore. 
+        We don't want to go kill someone if we are currently setting a new highscore
+        Returns True or False
+        """
         if self.all_trains[self.nickname]['score'] < (self.best_scores[self.nickname]-1):
             return True
         else:
             return False
         
     def kill_find_next_move(self,x,y,position_collect):
-        """ finds the best next move, ignoring if we drive into something killing us. """
+        """ 
+        Finds the best next move, ignoring if we drive into something killing us. 
+        x, y are our trains positions
+        position_collect is what we want to get to (In this case the head of another train) in the form of a tuple
+        Returns the next move that will take us closer to our target
+        """
         all_directions=[tuple((0,1)),tuple((0,-1)),tuple((1,0)),tuple((-1,0))]
         our_direction=self.convert_direction(self.all_trains[self.nickname]['direction'])
         ox,oy=our_direction
@@ -115,7 +134,12 @@ class Agent(BaseAgent,Game):
         return old_direction
         
     def find_next_move(self,x,y,position_collect):
-        """ finds the best next move, making us closer to our end goal"""
+        """ 
+        Finds the best next move, making us closer to our end goal
+        x, y are our trains positions
+        position_collect is what we want to get to (Either drop-off zone or Passengers) in the form of a tuple
+        Returns the next move that will take us closer to our target
+        """
         all_directions=[tuple((0,1)),tuple((0,-1)),tuple((1,0)),tuple((-1,0))]
         our_direction=self.convert_direction(self.all_trains[self.nickname]['direction'])
         ox,oy=our_direction
@@ -147,6 +171,8 @@ class Agent(BaseAgent,Game):
     def convert_next_move(self,next_move):
         """ 
         converts next move into coordinates dx,dy
+        next_move is currently in the form of MOVE.SOMETHING
+        Returns the corresponding tuple 
         """
         self.move_to_delta = {
             Move.UP:    (0, -1),
@@ -158,7 +184,11 @@ class Agent(BaseAgent,Game):
         return tuple((dx,dy))
         
     def convert_NM_coordinate(self,coordinate):
-        """converts directional coordinate into a move"""
+        """
+        Converts directional coordinate into a move
+        Coordinate is the direction of our next move
+        Returns the corresponding move (The way the function get_move has to return it)
+        """
         self.move_to_delta = {
             (0, -1): Move.UP,
             (0, 1): Move.DOWN,
@@ -233,8 +263,12 @@ class Agent(BaseAgent,Game):
             return solution
         
     def is_beside_train(self,coordinate):
-        """checks if a spesific coordinate is right next to the head of another train. 
-        The direction to the right, to the left, up and down."""
+        """
+        Checks if a spesific coordinate is right next to the head of another train. 
+        The direction to the right, to the left, up and down.
+        Coordinate is the field we want to chek
+        Returns True (if the field is not next to the head of a train) or False (if the field is next to the head of a player)
+        """
         occupied_list=[]
         for name in self.all_trains.keys():
             if self.all_trains[name]['alive']:
@@ -251,7 +285,9 @@ class Agent(BaseAgent,Game):
     def is_occupied(self, coordinate):
         """ 
         checks if a specific coordinate is already occupied, by a train or his wagons
-        #modifiziert
+        Coordinate is the field we want to check
+        Returns True (if there is currently no train on this field and it is not out of bounds) or False (if there is currently a train on this field or if it is out of bounds)
+
         """
         x,y = coordinate
         occupied_list=[]
@@ -271,14 +307,23 @@ class Agent(BaseAgent,Game):
             return False
         
     def dropping_off_2_coordinates(self, x1_coordinate, y1_coordinate):
-        """ finds the second coordinate of the drop off zone """
+        """ 
+        Finds the second coordinate of the drop off zone 
+        x1_coordinate, y1_coordinate the coordinates of our train
+        Returns the coordinates of the secon dropoff zone (int, int)
+        """
         height,width=self.convert_grid((self.delivery_zone['height'],self.delivery_zone['width']))
         x2_coordinate=x1_coordinate+width-1
         y2_coordinate=y1_coordinate+height-1
         return (x2_coordinate, y2_coordinate)
     
     def convert_grid(self,object):
-        """converts the object number into a single digit grid to use as coordinates"""
+        """
+        Converts the object number into a single digit grid to use as coordinates
+        Object is a list with two entrys. The first one represents the x-coordinate and the second 
+        entry represents the y-coordinate
+        Returns a tuple of the coordinate (as if the cell size is 1)
+        """
         x=object[0]
         y=object[1]
         x=int(x/self.cell_size)
@@ -286,19 +331,29 @@ class Agent(BaseAgent,Game):
         return (tuple((x,y)))
     
     def convert_direction(self,object):
-        """converts the direction into a tuple"""
+        """
+        Converts the direction into a tuple
+        Object is a list with two entrys. The first one represents the x-coordinate direction and the second 
+        entry represents the y-coordinate direction
+        Returns a tuple of the direction 
+        """
         x=object[0]
         y=object[1]
         return(tuple((x,y)))
     
     def convert_gamewith(self):
-        """converts the height and width into a single coordinate grid"""
+        """
+        Converts the height and width into a single coordinate grid
+        Doesn't return anything but rather modifies something
+        """
         self.WIDTH=int(self.game_width/self.cell_size)
         self.HEIGHT=int(self.game_height/self.cell_size)
 
     def convert_list(self,object):
         """
-        converts a list ino a list of numers into a single coorinates grid
+        Fonverts a list ino a list of numers into a single coorinates grid
+        Object is a list of numbers
+        Returns the modified list (as if the cell size was 1)
         """
         new_obj=[]
         if object==[]:
