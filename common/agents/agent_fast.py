@@ -3,7 +3,6 @@
 import random
 from common.base_agent import BaseAgent
 from common.move import Move
-from server.game import Game
 import math
 
 
@@ -27,18 +26,22 @@ class Agent(BaseAgent):
                     if name != self.nickname:
                         othername.append(name)
         match len(self.all_trains):
+            #case 1vs1 killing taktic
             case 2: #killing other train
                 if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>50:
                     difference_score=self.best_scores[self.nickname]-self.all_trains[othername[0]]['score']
                     if (difference_score>30):
                         next_move=self.kill_other(x,y,othername)
                         return next_move
-                
+                    
+            #in the case 1vs2  killing taktic   
             case 3: #killing method around dropoff
                 if drop_off_x and drop_off_y and drop_off2_x and drop_off2_y:
                     if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>60:
                         next_move=self.circle_dropoff(x,y)
                         return next_move
+                    
+            #in the case 1vs3 killing taktic       
             case 4: #killing the train with the closest score to ours
                 difference_score=math.inf
                 if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>70:
