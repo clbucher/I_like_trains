@@ -6,13 +6,10 @@ from common.move import Move
 from server.game import Game
 import math
 
-#readme
-#comment code
-#skypernmb
 
 # Student scipers, will be automatically used to evaluate your code
 SCIPERS = ["391884", "398510"]
-class Agent(BaseAgent,Game):
+class Agent(BaseAgent):
     def get_move(self):
         """
         Called regularly called to get the next move for your train. Implement
@@ -24,14 +21,15 @@ class Agent(BaseAgent,Game):
         train_coordinate = self.convert_grid(self.all_trains[self.nickname]['position'])
         x,y = train_coordinate
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
-        (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
+        (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y) 
+        othername=[]
         for name in self.all_trains.keys():
                     if name != self.nickname:
-                        othername=name
+                        othername.append(name)
         match len(self.all_trains):
             case 2: #killing other train
                 if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>50:
-                    difference_score=self.best_scores[self.nickname]-self.all_trains[othername]['score']
+                    difference_score=self.best_scores[self.nickname]-self.all_trains[othername[0]]['score']
                     if (difference_score>30):
                         next_move=self.kill_other(x,y,othername)
                         return next_move
@@ -40,6 +38,17 @@ class Agent(BaseAgent,Game):
                 if drop_off_x and drop_off_y and drop_off2_x and drop_off2_y:
                     if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>60:
                         next_move=self.circle_dropoff(x,y)
+                        return next_move
+            case 4: #killing the train with the closest score to ours
+                difference_score=math.inf
+                if self.we_are_best() and self.we_not_on_bestrun() and self.best_scores[self.nickname]>70:
+                    for i in range(len(othername)):
+                        difference_score_new=self.best_scores[self.nickname]-self.all_trains[othername[0]]['score']
+                        if difference_score_new<difference_score:
+                            difference_score=difference_score_new
+                            train_to_kill=othername[i]
+                    if difference_score<25:
+                        next_move=self.kill_other(x,y,train_to_kill)
                         return next_move
 
         position_collect=self.what_to_collect(x,y)
@@ -200,7 +209,9 @@ class Agent(BaseAgent,Game):
 
     def nearest_passenger(self,Ox,Oy):
         """ finds the smalest passenger_value fraction to compare which passenger should get collected. 
-        returns the passenger_value fraction and the position of the passenger with the smallest one."""
+        returns the passenger_value fraction and the position of the passenger with the smallest one.
+        Ox, Oy are the coordinates of our train
+        Returns the position of the best passenger we can collect (tuple) and the "importance" of this passenger (int)"""
         previous_distance=math.inf
         for number in range(len(self.passengers)):
             value=self.passengers[number]['value']
@@ -215,8 +226,9 @@ class Agent(BaseAgent,Game):
     
     def nearest_dropoff(self,Ox,Oy):
         """considers the two extreme points of the dropoff zone, to find which one is closer to us.
-        returns our comparison fraction, which we will use to compare with the passenger distance_value fraction
-        and the coordinate of the closest drop-off expreme point."""
+        returns our comparison fraction (float), which we will use to compare with the passenger distance_value fraction
+        and the coordinate (tuple) of the closest drop-off expreme point.
+        Ox, Oy are the coordinates of our train"""
         #distance of the dropoff zone
         (drop_off_x,drop_off_y)=self.convert_grid(self.delivery_zone['position'])
         (drop_off2_x, drop_off2_y)=self.dropping_off_2_coordinates(drop_off_x,drop_off_y)
@@ -246,13 +258,12 @@ class Agent(BaseAgent,Game):
         return distance_wagon,nearest_drop_coordinate
 
     def what_to_collect(self,Ox,Oy):
-        """
-        compares the two comparisson fractions. 
+        """ compares the two comparisson fractions. 
         the distance to the drop-off zone (DDO) fraction: DDO*(0.95**numberWagons)
         and the passenger distance_value fraction: distance/(value/2).
-        The lowest fraction of both will be the coordinate we return out of the function, 
-        since this is the next coordinate to go to.
-        """
+        The lowest fraction (float) of both will be the coordinate we return out of the function, 
+        since this is the next coordinate (tuple) to go to.
+        Ox, Oy are the coordinates of our train. """
         solution,previous_distance=self.nearest_passenger(Ox,Oy)
         distance_wagon,nearest_drop_coordinate=self.nearest_dropoff(Ox,Oy)
 
@@ -286,8 +297,8 @@ class Agent(BaseAgent,Game):
         """ 
         checks if a specific coordinate is already occupied, by a train or his wagons
         Coordinate is the field we want to check
-        Returns True (if there is currently no train on this field and it is not out of bounds) or False (if there is currently a train on this field or if it is out of bounds)
-
+        Returns True (if there is currently no train on this field and it is not out of bounds) 
+        or False (if there is currently a train on this field or if it is out of bounds)
         """
         x,y = coordinate
         occupied_list=[]
